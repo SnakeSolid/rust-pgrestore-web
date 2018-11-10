@@ -1,4 +1,6 @@
 use super::util::handle_request;
+use super::HandlerError;
+use super::HandlerResult;
 
 use config::ConfigRef;
 use iron::middleware::Handler;
@@ -25,11 +27,13 @@ impl Handler for RestoreHandler {
                 .config
                 .destinations()
                 .get(request.destination)
-                .ok_or("Invalid destination id")
-                .unwrap();
+                .ok_or_else(|| HandlerError::message("Invalid destination id"))?;
 
             if request.drop_database {
-                let mut child = Command::new(self.config.dropdb_path())
+                info!("Dropping database {}", request.database_name);
+
+                let mut command = Command::new(self.config.dropdb_path());
+                let mut command = command
                     .env("PGPASSWORD", destination.password())
                     .arg("--host")
                     .arg(destination.host())
@@ -37,16 +41,15 @@ impl Handler for RestoreHandler {
                     .arg(format!("{}", destination.port()))
                     .arg("--username")
                     .arg(destination.role())
-                    .arg(&request.database_name)
-                    .spawn()
-                    .unwrap();
+                    .arg(&request.database_name);
 
-                let status = child.wait().unwrap();
-
-                if !status.success() {}
+                execute_command(&mut command)?;
             }
 
-            let command = Command::new(self.config.createdb_path())
+            info!("Creating database {}", request.database_name);
+
+            let mut command = Command::new(self.config.createdb_path());
+            let mut command = command
                 .env("PGPASSWORD", destination.password())
                 .arg("--host")
                 .arg(destination.host())
@@ -54,12 +57,17 @@ impl Handler for RestoreHandler {
                 .arg(format!("{}", destination.port()))
                 .arg("--username")
                 .arg(destination.role())
-                .arg(&request.database_name)
-                .spawn();
+                .arg(&request.database_name);
 
-            command.unwrap().wait().unwrap();
+            execute_command(&mut command)?;
 
-            let command = Command::new(self.config.pgrestore_path())
+            info!(
+                "Restoring backup {} to database {}",
+                request.backup_path, request.database_name
+            );
+
+            let mut command = Command::new(self.config.pgrestore_path());
+            let mut command = command
                 .env("PGPASSWORD", destination.password())
                 .arg("--host")
                 .arg(destination.host())
@@ -71,13 +79,28 @@ impl Handler for RestoreHandler {
                 .arg(&request.database_name)
                 .arg("--jobs")
                 .arg("8")
-                .arg(request.backup_path)
-                .spawn();
+                .arg(request.backup_path);
 
-            command.unwrap().wait().unwrap();
+            execute_command(&mut command)?;
 
             Ok(Responce::with_success(0))
         })
+    }
+}
+
+fn execute_command(command: &mut Command) -> HandlerResult<()> {
+    let status = command
+        .spawn()
+        .map_err(|err| HandlerError::message(&format!("Failed to drop database - {}", err)))?
+        .wait()
+        .map_err(|err| HandlerError::message(&format!("Failed to drop database - {}", err)))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(HandlerError::message(
+            "Command returns non success exit code",
+        ))
     }
 }
 
