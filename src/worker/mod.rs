@@ -101,7 +101,7 @@ impl Worker {
             .set_stage(jobid, "Create database")
             .map_err(WorkerError::set_stage_error)?;
 
-        let mut command = Command::new(self.config.createdb_path());
+        let mut command = Command::new(self.config.commands().createdb_path());
 
         command
             .env("PGPASSWORD", self.destination.password())
@@ -123,7 +123,7 @@ impl Worker {
             .set_stage(jobid, "Drop database")
             .map_err(WorkerError::set_stage_error)?;
 
-        let mut command = Command::new(self.config.dropdb_path());
+        let mut command = Command::new(self.config.commands().dropdb_path());
 
         command
             .env("PGPASSWORD", self.destination.password())
@@ -149,7 +149,7 @@ impl Worker {
             .set_stage(jobid, "Restore database")
             .map_err(WorkerError::set_stage_error)?;
 
-        let mut command = Command::new(self.config.pgrestore_path());
+        let mut command = Command::new(self.config.commands().pgrestore_path());
 
         command
             .env("PGPASSWORD", self.destination.password())

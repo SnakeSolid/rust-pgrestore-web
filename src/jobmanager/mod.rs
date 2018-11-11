@@ -75,8 +75,7 @@ impl JobManagerRef {
 
 #[derive(Debug)]
 struct JobManager {
-    config: ConfigRef,
-    n_jobs: usize,
+    max_jobs: usize,
     last_jobid: usize,
     jobs: HashMap<usize, Job>,
 }
@@ -84,8 +83,7 @@ struct JobManager {
 impl JobManager {
     fn new(config: ConfigRef) -> JobManager {
         JobManager {
-            config,
-            n_jobs: 10,
+            max_jobs: config.max_jobs(),
             last_jobid: 0,
             jobs: HashMap::new(),
         }
@@ -105,8 +103,8 @@ impl JobManager {
         self.last_jobid += 1;
         self.jobs.insert(self.last_jobid, Job::default());
 
-        if self.last_jobid > self.n_jobs {
-            let last_keep_jobid = self.last_jobid - self.n_jobs;
+        if self.last_jobid > self.max_jobs {
+            let last_keep_jobid = self.last_jobid - self.max_jobs;
 
             self.jobs.retain(|&id, _| id > last_keep_jobid);
         }

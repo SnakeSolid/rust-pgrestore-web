@@ -12,13 +12,33 @@ pub type ConfigRef = Arc<Config>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    createdb_path: String,
-    dropdb_path: String,
-    pgrestore_path: String,
+    max_jobs: usize,
+    commands: Commands,
     destinations: Vec<Destination>,
 }
 
 impl Config {
+    pub fn max_jobs(&self) -> usize {
+        self.max_jobs
+    }
+
+    pub fn commands(&self) -> &Commands {
+        &self.commands
+    }
+
+    pub fn destinations(&self) -> &[Destination] {
+        &self.destinations
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Commands {
+    createdb_path: String,
+    dropdb_path: String,
+    pgrestore_path: String,
+}
+
+impl Commands {
     pub fn createdb_path(&self) -> &str {
         &self.createdb_path
     }
@@ -29,10 +49,6 @@ impl Config {
 
     pub fn pgrestore_path(&self) -> &str {
         &self.pgrestore_path
-    }
-
-    pub fn destinations(&self) -> &[Destination] {
-        &self.destinations
     }
 }
 
