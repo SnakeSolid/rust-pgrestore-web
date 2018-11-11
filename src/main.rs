@@ -18,9 +18,10 @@ extern crate time;
 
 mod config;
 mod handler;
-mod worker;
+mod jobmanager;
 mod options;
 mod server;
+mod worker;
 
 use options::Options;
 use structopt::StructOpt;
@@ -32,7 +33,9 @@ fn main() {
 
     match config::load(options.config_path()) {
         Ok(config) => {
-            server::start(&options, config);
+            let job_manager = jobmanager::create(config.clone());
+
+            server::start(&options, config, job_manager);
         }
         Err(err) => error!("Failed to read configuration: {}", err),
     }

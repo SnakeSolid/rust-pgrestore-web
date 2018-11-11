@@ -6,16 +6,21 @@ use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
+use jobmanager::JobManagerRef;
 use worker::Worker;
 
 #[derive(Debug)]
 pub struct RestoreHandler {
     config: ConfigRef,
+    job_manager: JobManagerRef,
 }
 
 impl RestoreHandler {
-    pub fn new(config: ConfigRef) -> RestoreHandler {
-        RestoreHandler { config }
+    pub fn new(config: ConfigRef, job_manager: JobManagerRef) -> RestoreHandler {
+        RestoreHandler {
+            config,
+            job_manager,
+        }
     }
 }
 
@@ -41,13 +46,17 @@ impl Handler for RestoreHandler {
                 DatabaseType::Create => (false, true),
                 DatabaseType::DropAndCreate => (true, true),
             };
+            let job_id = self
+                .job_manager
+                .next_jobid()
+                .map_err(|_| HandlerError::new("Failed to create job"))?;
             let worker = Worker::new(
                 self.config.clone(),
+                self.job_manager.clone(),
                 destination,
                 request.backup_path.as_ref(),
                 request.database_name.as_ref(),
             );
-            let job_id = 1;
 
             match request.restore {
                 RestoreType::Full => worker
