@@ -1,0 +1,102 @@
+<div class="ui segment">
+  <h3>Restore Database</h3>
+
+  <div class="ui icon negative message" data-bind="visible: isError">
+    <div class="content">
+      <h3>Error</h3>
+      <p data-bind="text: errorMessage"></p>
+    </div>
+  </div>
+
+  <div class="ui form" data-bind="css: { loading: isLoading }">
+    <div class="field" data-bind="css: { error: isDestinationInvalid }">
+      <label for="destination">Destination:</label>
+      <select id="destination" data-bind="
+          options: availableDestinations,
+          optionsText: 'name',
+          optionsValue: 'index',
+          value: selectedDestination,
+          optionsCaption: 'Choose destination...'
+        " class="ui dropdown">
+        <option value="0">anaconda@localhost:5432</option>
+      </select>
+    </div>
+
+    <div class="field" data-bind="css: { error: isBackupPathInvalid }">
+      <label for="backup_file">Backup file path:</label>
+      <input id="backup_file" type="text" data-bind="textInput: backupPath" placeholder="/path.backup">
+    </div>
+
+    <div class="field" data-bind="css: { error: isDatabaseNameInvalid }">
+      <label for="database_name">Database name:</label>
+      <input id="database_name" type="text" data-bind="textInput: databaseName" placeholder="database">
+    </div>
+
+    <div class="inline fields">
+      <label>Database:</label>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="database_exists" type="radio" name="database" value="Exists" data-bind="checked: database" tabindex="0" class="hidden">
+          <label for="database_exists">use exists</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="database_create" type="radio" name="database" value="Create" data-bind="checked: database" checked="" tabindex="0" class="hidden">
+          <label for="database_create">create new</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="database_dropcreate" type="radio" name="database" value="DropAndCreate" data-bind="checked: database" tabindex="0" class="hidden">
+          <label for="database_dropcreate">drop exists and create</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="inline fields">
+      <label>Restore:</label>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="restore_full" type="radio" name="restore" value="Full" data-bind="checked: restore" checked="" tabindex="0" class="hidden">
+          <label for="restore_full">whole backup</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="restore_schema" type="radio" name="restore" value="Schema" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
+          <label for="restore_schema">schema's only</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="restore_tables" type="radio" name="restore" value="Tables" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
+          <label for="restore_tables">tables only</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="field" data-bind="visible: isRestoreSchemas">
+      <label>Schema names:</label>
+      <input type="text" data-bind="value: schemas" placeholder="schema names">
+    </div>
+
+    <div class="field" data-bind="visible: isRestoreTables">
+      <label>Full table names (with schema part):</label>
+      <textarea rows="2" data-bind="value: tables"></textarea>
+    </div>
+
+    <div class="ui buttons">
+      <button class="ui primary button" data-bind="click: restoreDatabase">Restore</button>
+      <button class="ui button" data-bind="click: convertSlashes">Convert path slashes</button>
+      <button class="ui button" disabled="">Schema's from query</button>
+      <button class="ui button" disabled="">Tables from query</button>
+    </div>
+  </div>
+</div>

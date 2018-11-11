@@ -8,114 +8,29 @@
   <link rel="icon" sizes="16x16" type="image/x-icon" href="/static/favicon-x16.png">
   <link rel="icon" sizes="32x32" type="image/x-icon" href="/static/favicon-x32.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.css" integrity="sha256-ncjDAd2/rm/vaNTqp7Kk96MfSeHACtbiDU9NWKqNuCI=" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/modal.min.css" integrity="sha256-FccLM5cr47C+SE7Xjvlw+IQGY/xmreJ8yTIEwqA6OXs=" crossorigin="anonymous" />
 
-  <script async data-main="/static/js/init.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js" integrity="sha256-0SGl1PJNDyJwcV5T+weg2zpEMrh7xvlwO4oXgvZCeZk=" crossorigin="anonymous"></script>
+  <script async data-main="/static/js/init.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha256-1fEPhSsRKlFKGfK3eO710tEweHh1fwokU5wFGDHO+vg=" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="ui grid">
     <div class="four wide column"></div>
 
     <div class="eight wide column">
-      <h1>PG Restore Web</h1>
+      <div class="ui secondary pointing menu">
+        <div class="header item">PG Restore Web</div>
 
-      <div class="ui icon negative message" data-bind="visible: isError">
-        <i class="delete icon"></i>
-        <div class="content">
-          <h3>Error</h3>
-          <p data-bind="text: errorMessage"></p>
-        </div>
+        <a class="item" data-bind="click: setRestorePage, css: { active: isRestoreVisible }">Restore</a>
+        <a class="item" data-bind="click: setStatusPage, css: { active: isStatusVisible }">Status</a>
+        <a class="item" data-bind="click: setJobsPage, css: { active: isJobsVisible }">Jobs</a>
       </div>
 
-      <div class="ui form" data-bind="css: { loading: isLoading }">
-        <div class="field">
-          <label for="destination">Destination:</label>
-          <select id="destination" data-bind="
-              options: availableDestinations,
-              optionsText: 'name',
-              optionsValue: 'index',
-              value: selectedDestination,
-              optionsCaption: 'Choose destination...'
-            ">
-            <option value="0">anaconda@localhost:5432</option>
-          </select>
-        </div>
+      <div data-bind="visible: isRestoreVisible">
+        <ko-restore params="restoreCallback: restoreCallback"></ko-restore>
+      </div>
 
-        <div class="ui action field">
-          <label for="backup_file">Backup file path:</label>
-          <input id="backup_file" type="text" data-bind="value: backupPath" placeholder="/path.backup">
-        </div>
-
-        <div class="field">
-          <label for="database_name">Database name:</label>
-          <input id="database_name" type="text" data-bind="value: databaseName" placeholder="database">
-        </div>
-
-        <div class="inline fields">
-          <label>Database:</label>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="database_exists" type="radio" name="database" value="Exists" data-bind="checked: database" tabindex="0" class="hidden">
-              <label for="database_exists">use exists</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="database_create" type="radio" name="database" value="Create" data-bind="checked: database" checked="" tabindex="0" class="hidden">
-              <label for="database_create">create new</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="database_dropcreate" type="radio" name="database" value="DropAndCreate" data-bind="checked: database" tabindex="0" class="hidden">
-              <label for="database_dropcreate">drop exists and create</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="inline fields">
-          <label>Restore:</label>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="restore_full" type="radio" name="restore" value="Full" data-bind="checked: restore" checked="" tabindex="0" class="hidden">
-              <label for="restore_full">whole backup</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="restore_schema" type="radio" name="restore" value="Schema" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
-              <label for="restore_schema">schema's only</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="ui radio checkbox">
-              <input id="restore_tables" type="radio" name="restore" value="Tables" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
-              <label for="restore_tables">tables only</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="field" data-bind="visible: isRestoreSchemas">
-          <label>Schema names:</label>
-          <input type="text" data-bind="value: schemas" placeholder="schema names">
-        </div>
-
-        <div class="field" data-bind="visible: isRestoreTables">
-          <label>Full table names (with schema part):</label>
-          <textarea rows="2" data-bind="value: tables"></textarea>
-        </div>
-
-        <div class="ui buttons">
-          <button class="ui primary button" data-bind="click: restoreDatabase">Restore</button>
-          <button class="ui button" data-bind="click: convertSlashes">Convert path slashes</button>
-          <button class="ui button" disabled="">Schema's from query</button>
-          <button class="ui button" disabled="">Tables from query</button>
-        </div>
+      <div data-bind="visible: isStatusVisible">
+        <ko-status params="jobid: currentJobid"></ko-status>
       </div>
     </div>
 

@@ -1,139 +1,46 @@
 "use strict";
 
-define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
-	const DATABASE_EXISTS = "Exists";
-	const DATABASE_CREATE = "Create";
-	const DATABASE_DROPANDCREATE = "DropAndCreate";
-	const RESTORE_FULL = "Full";
-	const RESTORE_SCHEMA = "Schema";
-	const RESTORE_TABLES = "Tables";
+define([ "knockout" ], function(ko) {
+	const PAGE_RESTORE = "Restore";
+	const PAGE_STATUS = "Status";
+	const PAGE_JOBS = "Jobs";
 
 	const Application = function() {
-		this.loading = ko.observable(false);
-		this.error = ko.observable(false);
-		this.errorMessage = ko.observable();
-		this.availableDestinations = ko.observableArray();
-		this.selectedDestination = ko.observable();
-		this.backupPath = ko.observable("");
-		this.databaseName = ko.observable("");
-		this.database = ko.observable(DATABASE_CREATE);
-		this.restore = ko.observable(RESTORE_FULL);
-		this.schemas = ko.observable("");
-		this.tables = ko.observable("");
+		this.currentPage = ko.observable(PAGE_RESTORE);
+		this.currentJobid = ko.observable();
 
-		this.isLoading = ko.pureComputed(function() {
-			return this.loading();
+		this.isRestoreVisible = ko.pureComputed(function() {
+			return this.currentPage() === PAGE_RESTORE;
 		}, this);
 
-		this.isError = ko.pureComputed(function() {
-			return this.error();
+		this.isStatusVisible = ko.pureComputed(function() {
+			return this.currentPage() === PAGE_STATUS;
 		}, this);
 
-		this.isRestoreFull = ko.pureComputed(function() {
-			return this.restore() === RESTORE_FULL;
+		this.isJobsVisible = ko.pureComputed(function() {
+			return this.currentPage() === PAGE_JOBS;
 		}, this);
 
-		this.isRestoreSchemas = ko.pureComputed(function() {
-			return this.restore() === RESTORE_SCHEMA;
-		}, this);
-
-		this.isRestoreTables = ko.pureComputed(function() {
-			return this.restore() === RESTORE_TABLES;
-		}, this);
-	};
-
-	Application.prototype.setDatabaseExists = function() {
-		this.database(DATABASE_EXISTS);
-	};
-
-	Application.prototype.setDatabaseCreate = function() {
-		this.database(DATABASE_CREATE);
-	};
-
-	Application.prototype.setDatabaseDropAndCreate = function() {
-		this.database(DATABASE_DROPANDCREATE);
-	};
-
-	Application.prototype.setRestoreFull = function() {
-		this.restore(RESTORE_FULL);
-	};
-
-	Application.prototype.setRestoreSchemas = function() {
-		this.restore(RESTORE_SCHEMA);
-	};
-
-	Application.prototype.setRestoreTables = function() {
-		this.restore(RESTORE_TABLES);
-	};
-
-	Application.prototype.loadDestinations = function() {
 		const self = this;
-		const res = reqwest({
-			url: "/api/v1/destination",
-			type: "json",
-  			method: "POST",
-		}).then(function(resp) {
-			if (resp.success) {
-				self.availableDestinations(resp.result);
-				self.error(false);
-			} else {
-				self.error(true);
-				self.errorMessage(resp.message);
-			}
 
-			self.loading(false);
-		}).fail(function(err, msg) {
-			self.loading(false);
-			self.error(true);
-			self.errorMessage(msg);
-		});
-
-		this.loading(true);
+		// TODO Replace this workaround with correct solution
+		// this bind caller context instead of application
+		this.restoreCallback = function(jobid) {
+			self.currentJobid(jobid);
+			self.currentPage(PAGE_STATUS);
+		};
 	};
 
-	Application.prototype.restoreDatabase = function() {
-		const self = this;
-		const res = reqwest({
-			url: "/api/v1/restore",
-		  	type: "json",
-  			method: "POST",
-  			contentType: "pplication/json",
-  			data: JSON.stringify({
-  			  				destination: self.selectedDestination(),
-  			  				backup_path: self.backupPath(),
-  			  				database_name: self.databaseName(),
-  			  				database: self.database(),
-  			  				restore: self.restore(),
-  			  			}),
-		}).then(function(resp) {
-			if (resp.success) {
-				alert(JSON.stringify(resp));
-				self.error(false);
-			} else {
-				self.error(true);
-				self.errorMessage(resp.message);
-			}
-
-			self.loading(false);
-		}).fail(function(err, msg) {
-			self.loading(false);
-			self.error(true);
-			self.errorMessage(msg);
-		});
-
-		this.loading(true);
+	Application.prototype.setRestorePage = function() {
+		this.currentPage(PAGE_RESTORE);
 	};
 
-	Application.prototype.convertSlashes = function() {
-		const backupPath = this.backupPath();
-		const nForwardSlashes = backupPath.split(/\//).length;
-		const nBackwardSlashes = backupPath.split(/\\/).length;
+	Application.prototype.setStatusPage = function() {
+		this.currentPage(PAGE_STATUS);
+	};
 
-		if (nForwardSlashes > nBackwardSlashes) {
-			this.backupPath(backupPath.replace(/\//g, "\\"));
-		} else {
-			this.backupPath(backupPath.replace(/\\/g, "/"));
-		}
+	Application.prototype.setJobsPage = function() {
+		this.currentPage(PAGE_JOBS);
 	};
 
 	return Application;

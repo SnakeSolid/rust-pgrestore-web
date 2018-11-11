@@ -1,0 +1,18 @@
+<div class="ui segment">
+  <h3 class="ui header">Job #<span data-bind="text: jobid"></span> Status</h3>
+
+  <div class="ui positive message" data-bind="visible: isSuccess">
+    <p>Job completed successfully</p>
+  </div>
+
+  <div class="ui negative message" data-bind="visible: isFailed">
+    <p>Job completed with error</p>
+  </div>
+
+  <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
+
+  <div class="ui existing segment">
+    <pre data-bind="text: stdout"></pre>
+    <pre data-bind="text: stderr"></pre>
+  </div>
+</div>
