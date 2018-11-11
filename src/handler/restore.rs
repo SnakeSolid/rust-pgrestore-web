@@ -1,13 +1,12 @@
 use super::util::handle_request;
 use super::HandlerError;
-use super::HandlerResult;
 
 use config::ConfigRef;
 use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
-use std::process::Command;
+use worker::Worker;
 
 #[derive(Debug)]
 pub struct RestoreHandler {
@@ -27,80 +26,38 @@ impl Handler for RestoreHandler {
                 .config
                 .destinations()
                 .get(request.destination)
-                .ok_or_else(|| HandlerError::message("Invalid destination id"))?;
+                .ok_or_else(|| HandlerError::new("Invalid destination id"))?;
 
-            if request.drop_database {
-                info!("Dropping database {}", request.database_name);
-
-                let mut command = Command::new(self.config.dropdb_path());
-                let mut command = command
-                    .env("PGPASSWORD", destination.password())
-                    .arg("--host")
-                    .arg(destination.host())
-                    .arg("--port")
-                    .arg(format!("{}", destination.port()))
-                    .arg("--username")
-                    .arg(destination.role())
-                    .arg(&request.database_name);
-
-                execute_command(&mut command)?;
+            if request.backup_path.is_empty() {
+                return Err(HandlerError::new("Backup path must not be empty"));
             }
 
-            info!("Creating database {}", request.database_name);
+            if request.database_name.is_empty() {
+                return Err(HandlerError::new("Database name must not be empty"));
+            }
 
-            let mut command = Command::new(self.config.createdb_path());
-            let mut command = command
-                .env("PGPASSWORD", destination.password())
-                .arg("--host")
-                .arg(destination.host())
-                .arg("--port")
-                .arg(format!("{}", destination.port()))
-                .arg("--username")
-                .arg(destination.role())
-                .arg(&request.database_name);
-
-            execute_command(&mut command)?;
-
-            info!(
-                "Restoring backup {} to database {}",
-                request.backup_path, request.database_name
+            let (drop_database, create_database) = match request.database {
+                DatabaseType::Exists => (false, false),
+                DatabaseType::Create => (false, true),
+                DatabaseType::DropAndCreate => (true, true),
+            };
+            let worker = Worker::new(
+                self.config.clone(),
+                destination,
+                request.backup_path.as_ref(),
+                request.database_name.as_ref(),
             );
+            let job_id = 1;
 
-            let mut command = Command::new(self.config.pgrestore_path());
-            let mut command = command
-                .env("PGPASSWORD", destination.password())
-                .arg("--host")
-                .arg(destination.host())
-                .arg("--port")
-                .arg(format!("{}", destination.port()))
-                .arg("--username")
-                .arg(destination.role())
-                .arg("--dbname")
-                .arg(&request.database_name)
-                .arg("--jobs")
-                .arg("8")
-                .arg(request.backup_path);
+            match request.restore {
+                RestoreType::Full => worker
+                    .restore_full(job_id, drop_database, create_database)
+                    .map_err(|err| HandlerError::new(err.message()))?,
+                _ => unimplemented!(),
+            }
 
-            execute_command(&mut command)?;
-
-            Ok(Responce::with_success(0))
+            Ok(job_id)
         })
-    }
-}
-
-fn execute_command(command: &mut Command) -> HandlerResult<()> {
-    let status = command
-        .spawn()
-        .map_err(|err| HandlerError::message(&format!("Failed to drop database - {}", err)))?
-        .wait()
-        .map_err(|err| HandlerError::message(&format!("Failed to drop database - {}", err)))?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err(HandlerError::message(
-            "Command returns non success exit code",
-        ))
     }
 }
 
@@ -109,21 +66,20 @@ struct Request {
     destination: usize,
     backup_path: String,
     database_name: String,
-    drop_database: bool,
-    restore: String,
+    database: DatabaseType,
+    restore: RestoreType,
 }
 
-#[derive(Debug, Serialize)]
-struct Responce {
-    success: bool,
-    job_id: usize,
+#[derive(Debug, Deserialize)]
+enum DatabaseType {
+    Exists,
+    Create,
+    DropAndCreate,
 }
 
-impl Responce {
-    fn with_success(job_id: usize) -> Responce {
-        Responce {
-            success: true,
-            job_id,
-        }
-    }
+#[derive(Debug, Deserialize)]
+enum RestoreType {
+    Full,
+    Schema { schema: Vec<String> },
+    Tables { tables: Vec<String> },
 }

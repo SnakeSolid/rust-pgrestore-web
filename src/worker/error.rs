@@ -3,24 +3,28 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
 
-pub type HandlerResult<T> = Result<T, HandlerError>;
+pub type WorkerResult<T> = Result<T, WorkerError>;
 
 #[derive(Debug)]
-pub struct HandlerError {
+pub struct WorkerError {
     message: String,
 }
 
-impl HandlerError {
-    pub fn new(message: &str) -> HandlerError {
-        HandlerError {
+impl WorkerError {
+    pub fn new(message: &str) -> WorkerError {
+        WorkerError {
             message: message.into(),
         }
     }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
 }
 
-impl Error for HandlerError {}
+impl Error for WorkerError {}
 
-impl Display for HandlerError {
+impl Display for WorkerError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.message)
     }

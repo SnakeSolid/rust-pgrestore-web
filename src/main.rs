@@ -18,6 +18,7 @@ extern crate time;
 
 mod config;
 mod handler;
+mod worker;
 mod options;
 mod server;
 
@@ -30,7 +31,9 @@ fn main() {
     let options = Options::from_args();
 
     match config::load(options.config_path()) {
-        Ok(config) => server::start(&options, config),
+        Ok(config) => {
+            server::start(&options, config);
+        }
         Err(err) => error!("Failed to read configuration: {}", err),
     }
 }

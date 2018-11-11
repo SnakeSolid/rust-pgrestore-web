@@ -1,6 +1,9 @@
 "use strict";
 
 define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
+	const DATABASE_EXISTS = "Exists";
+	const DATABASE_CREATE = "Create";
+	const DATABASE_DROPANDCREATE = "DropAndCreate";
 	const RESTORE_FULL = "Full";
 	const RESTORE_SCHEMA = "Schema";
 	const RESTORE_TABLES = "Tables";
@@ -13,7 +16,7 @@ define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
 		this.selectedDestination = ko.observable();
 		this.backupPath = ko.observable("");
 		this.databaseName = ko.observable("");
-		this.dropDatabase = ko.observable(false);
+		this.database = ko.observable(DATABASE_CREATE);
 		this.restore = ko.observable(RESTORE_FULL);
 		this.schemas = ko.observable("");
 		this.tables = ko.observable("");
@@ -39,6 +42,18 @@ define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
 		}, this);
 	};
 
+	Application.prototype.setDatabaseExists = function() {
+		this.database(DATABASE_EXISTS);
+	};
+
+	Application.prototype.setDatabaseCreate = function() {
+		this.database(DATABASE_CREATE);
+	};
+
+	Application.prototype.setDatabaseDropAndCreate = function() {
+		this.database(DATABASE_DROPANDCREATE);
+	};
+
 	Application.prototype.setRestoreFull = function() {
 		this.restore(RESTORE_FULL);
 	};
@@ -60,6 +75,10 @@ define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
 		}).then(function(resp) {
 			if (resp.success) {
 				self.availableDestinations(resp.result);
+				self.error(false);
+			} else {
+				self.error(true);
+				self.errorMessage(resp.message);
 			}
 
 			self.loading(false);
@@ -83,12 +102,13 @@ define([ "knockout", "moment", "reqwest" ], function(ko, moment, reqwest) {
   			  				destination: self.selectedDestination(),
   			  				backup_path: self.backupPath(),
   			  				database_name: self.databaseName(),
-  			  				drop_database: self.dropDatabase(),
+  			  				database: self.database(),
   			  				restore: self.restore(),
   			  			}),
 		}).then(function(resp) {
 			if (resp.success) {
 				alert(JSON.stringify(resp));
+				self.error(false);
 			} else {
 				self.error(true);
 				self.errorMessage(resp.message);
