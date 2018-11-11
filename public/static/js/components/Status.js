@@ -26,6 +26,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			return this.status() === STATUS_FAILED;
 		}, this);
 
+		this.hasStdout = ko.pureComputed(function() {
+			return this.stdout().length > 0;
+		}, this);
+
+		this.hasStderr = ko.pureComputed(function() {
+			return this.stderr().length > 0;
+		}, this);
+
 		this.checkJobid(this.jobid());
 		this.jobid.subscribe(this.checkJobid, this);
 	};
@@ -62,14 +70,18 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			type: "json",
   			method: "POST",
   			contentType: "pplication/json",
-  			data: JSON.stringify({ jobid: self.jobid(), }),
+  			data: JSON.stringify({
+				jobid: self.jobid(),
+				stdout_position: self.stdout().length + 1,
+				stderr_position: self.stderr().length + 1,
+			}),
 		}).then(function(resp) {
 			if (resp.success) {
 				const data = resp.result;
 
 				self.stage(data.stage);
-				self.stdout(data.stdout);
-				self.stderr(data.stderr);
+				self.stdout(self.stdout() + data.stdout);
+				self.stderr(self.stderr() + data.stderr);
 				self.status(data.status);
 
 				if (data.status === STATUS_SUCCESS || data.status === STATUS_FAILED) {

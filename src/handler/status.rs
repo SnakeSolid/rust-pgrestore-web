@@ -9,6 +9,7 @@ use iron::Response as IronResponse;
 use jobmanager::Job;
 use jobmanager::JobManagerRef;
 use jobmanager::JobStatus;
+use std::borrow::Cow;
 
 #[derive(Debug)]
 pub struct StatusHandler {
@@ -28,9 +29,13 @@ impl StatusHandler {
 impl Handler for StatusHandler {
     fn handle(&self, request: &mut IronRequest) -> IronResult<IronResponse> {
         handle_request(request, move |request: Request| {
+            let stdout_position = request.stdout_position.unwrap_or(0);
+            let stderr_position = request.stderr_position.unwrap_or(0);
+
             self.job_manager
-                .map_job(request.jobid, Responce::from_job)
-                .map_err(|_| HandlerError::new("Job manager error"))?
+                .map_job(request.jobid, |job| {
+                    Responce::from_job(job, stdout_position, stderr_position)
+                }).map_err(|_| HandlerError::new("Job manager error"))?
                 .ok_or_else(|| HandlerError::new("Job not found"))
         })
     }
@@ -39,6 +44,8 @@ impl Handler for StatusHandler {
 #[derive(Debug, Deserialize)]
 struct Request {
     jobid: usize,
+    stdout_position: Option<usize>,
+    stderr_position: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -57,23 +64,13 @@ enum Status {
 }
 
 impl Responce {
-    fn from_job(job: &Job) -> Responce {
+    fn from_job(job: &Job, stdout_position: usize, stderr_position: usize) -> Responce {
         let stage = job
             .stage()
             .cloned()
             .unwrap_or_else(|| String::with_capacity(0));
-        let stdout_len = job.stdout().len();
-        let stderr_len = job.stderr().len();
-        let stdout = if stdout_len < 1024 {
-            String::from_utf8_lossy(job.stdout())
-        } else {
-            String::from_utf8_lossy(&job.stdout()[stdout_len - 1024..stdout_len])
-        };
-        let stderr = if stderr_len < 1024 {
-            String::from_utf8_lossy(job.stderr())
-        } else {
-            String::from_utf8_lossy(&job.stderr()[stdout_len - 1024..stdout_len])
-        };
+        let stdout = slice_to_string(job.stdout(), stdout_position);
+        let stderr = slice_to_string(job.stderr(), stderr_position);
         let status = match job.status() {
             JobStatus::Complete { success: true } => Status::Success,
             JobStatus::Complete { success: false } => Status::Failed,
@@ -87,4 +84,17 @@ impl Responce {
             status,
         }
     }
+}
+
+fn slice_to_string<'a>(buffer: &'a [u8], position: usize) -> Cow<'a, str> {
+    let start = position.min(buffer.len());
+
+    println!(
+        "position = {}, buffer.len = {}, start = {}",
+        position,
+        buffer.len(),
+        start
+    );
+
+    String::from_utf8_lossy(&buffer[start..])
 }

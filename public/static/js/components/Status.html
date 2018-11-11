@@ -11,8 +11,8 @@
 
   <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
 
-  <div class="ui existing segment">
-    <pre data-bind="text: stdout"></pre>
-    <pre data-bind="text: stderr"></pre>
+  <div class="ui existing segment" >
+    <pre data-bind="text: stdout, visible: hasStdout"></pre>
+    <pre data-bind="text: stderr, visible: hasStderr"></pre>
   </div>
 </div>
