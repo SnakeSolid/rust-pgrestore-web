@@ -12,7 +12,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.stage = ko.observable("");
 		this.stdout = ko.observable("");
 		this.stderr = ko.observable("");
-		this.status = ko.observable();
+		this.status = ko.observable(STATUS_INPROGRESS);
 
 		this.isInProgress = ko.pureComputed(function() {
 			return this.status() === STATUS_INPROGRESS;
@@ -32,6 +32,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 	Status.prototype.startTimer = function() {
 		this.stopTimer();
+		this.updateStatus()
 		this.currectTimer = setInterval(this.updateStatus.bind(this), 1000);
 	};
 
@@ -47,6 +48,11 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		if (newValue !== undefined) {
 			this.startTimer();
 		}
+
+		this.stage("");
+		this.stdout("");
+		this.stderr("");
+		this.status(STATUS_INPROGRESS);
 	};
 
 	Status.prototype.updateStatus = function() {
@@ -70,8 +76,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 					self.stopTimer();
 				}
 			} else {
+				self.stopTimer();
 			}
 		}).fail(function(err, msg) {
+			self.stopTimer();
 		});
 	};
 

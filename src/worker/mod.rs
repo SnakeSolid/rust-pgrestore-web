@@ -170,7 +170,11 @@ impl Worker {
     {
         match callback() {
             Ok(()) => Ok(()),
-            Err(_) => self.set_complete(jobid, false),
+            Err(err) => {
+                self.set_complete(jobid, false)?;
+
+                Err(err)
+            }
         }
     }
 
