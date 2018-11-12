@@ -72,7 +72,7 @@ impl Worker {
     fn wait_command(&self, jobid: usize, mut command: Command) -> WorkerResult<()> {
         let mut child = command
             .stdin(Stdio::null())
-            .stdout(Stdio::piped())
+            .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .spawn()
             .map_err(WorkerError::spawn_command_error)?;
