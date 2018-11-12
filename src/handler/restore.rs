@@ -56,11 +56,15 @@ impl Handler for RestoreHandler {
                 destination,
                 request.backup_path.as_ref(),
                 request.database_name.as_ref(),
+                request.ignore_errors,
             );
 
             match request.restore {
                 RestoreType::Full => worker
                     .restore_full(job_id, drop_database, create_database)
+                    .map_err(|err| HandlerError::new(err.message()))?,
+                RestoreType::Schema { schema } => worker
+                    .restore_schema(job_id, &schema, drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
                 _ => unimplemented!(),
             }
@@ -77,6 +81,7 @@ struct Request {
     database_name: String,
     database: DatabaseType,
     restore: RestoreType,
+    ignore_errors: bool,
 }
 
 #[derive(Debug, Deserialize)]

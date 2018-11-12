@@ -20,6 +20,7 @@ pub struct Worker {
     destination: Destination,
     backup_path: PathBuf,
     database_name: String,
+    ignore_errors: bool,
 }
 
 impl Worker {
@@ -29,6 +30,7 @@ impl Worker {
         destination: &Destination,
         backup_path: &Path,
         database_name: &str,
+        ignore_errors: bool,
     ) -> Worker {
         Worker {
             config,
@@ -36,6 +38,7 @@ impl Worker {
             destination: destination.clone(),
             backup_path: backup_path.into(),
             database_name: database_name.into(),
+            ignore_errors,
         }
     }
 
@@ -94,7 +97,7 @@ impl Worker {
         }
     }
 
-    fn create_database(&self, jobid: usize) -> WorkerResult<()> {
+    fn do_create_database(&self, jobid: usize) -> WorkerResult<()> {
         info!("Creating database {}", self.database_name);
 
         self.jobmanager
@@ -104,6 +107,7 @@ impl Worker {
         let mut command = Command::new(self.config.commands().createdb_path());
 
         command
+            .env_clear()
             .env("PGPASSWORD", self.destination.password())
             .arg("--host")
             .arg(self.destination.host())
@@ -116,14 +120,17 @@ impl Worker {
         self.wait_command(jobid, command)
     }
 
-    fn drop_database(&self, jobid: usize) -> WorkerResult<()> {
-        info!("Dropping database {}", self.database_name);
+    fn do_create_schema(&self, jobid: usize, name: &str) -> WorkerResult<()> {
+        info!(
+            "Creating schema {} in database {}",
+            name, self.database_name
+        );
 
         self.jobmanager
-            .set_stage(jobid, "Drop database")
+            .set_stage(jobid, "Create schema")
             .map_err(WorkerError::set_stage_error)?;
 
-        let mut command = Command::new(self.config.commands().dropdb_path());
+        let mut command = Command::new(self.config.commands().psql_path());
 
         command
             .env("PGPASSWORD", self.destination.password())
@@ -133,12 +140,37 @@ impl Worker {
             .arg(format!("{}", self.destination.port()))
             .arg("--username")
             .arg(self.destination.role())
+            .arg("--command")
+            .arg(format!("CREATE SCHEMA IF NOT EXISTS {}", name))
             .arg(&self.database_name);
 
         self.wait_command(jobid, command)
     }
 
-    fn restore_backup(&self, jobid: usize) -> WorkerResult<()> {
+    fn do_drop_database(&self, jobid: usize) -> WorkerResult<()> {
+        info!("Dropping database {}", self.database_name);
+
+        self.jobmanager
+            .set_stage(jobid, "Drop database")
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.config.commands().dropdb_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.destination.password())
+            .arg("--host")
+            .arg(self.destination.host())
+            .arg("--port")
+            .arg(format!("{}", self.destination.port()))
+            .arg("--username")
+            .arg(self.destination.role())
+            .arg(&self.database_name);
+
+        self.wait_command(jobid, command)
+    }
+
+    fn do_restore_backup(&self, jobid: usize) -> WorkerResult<()> {
         info!(
             "Restoring database {} from {}",
             self.database_name,
@@ -152,6 +184,7 @@ impl Worker {
         let mut command = Command::new(self.config.commands().pgrestore_path());
 
         command
+            .env_clear()
             .env("PGPASSWORD", self.destination.password())
             .arg("--verbose")
             .arg("--host")
@@ -162,6 +195,47 @@ impl Worker {
             .arg(self.destination.role())
             .arg("--dbname")
             .arg(&self.database_name)
+            .arg("--clean")
+            .arg("--no-owner")
+            .arg("--no-privileges")
+            .arg("--jobs")
+            .arg(format!("{}", self.config.restore_jobs()))
+            .arg(&self.backup_path);
+
+        self.wait_command(jobid, command)
+    }
+
+    fn do_restore_schema(&self, jobid: usize, name: &str) -> WorkerResult<()> {
+        info!(
+            "Restoring schema {} to {} from {}",
+            name,
+            self.database_name,
+            self.backup_path.display(),
+        );
+
+        self.jobmanager
+            .set_stage(jobid, &format!("Restore schema {}", name))
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.config.commands().pgrestore_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.destination.password())
+            .arg("--verbose")
+            .arg("--host")
+            .arg(self.destination.host())
+            .arg("--port")
+            .arg(format!("{}", self.destination.port()))
+            .arg("--username")
+            .arg(self.destination.role())
+            .arg("--dbname")
+            .arg(&self.database_name)
+            .arg("--schema")
+            .arg(name)
+            .arg("--clean")
+            .arg("--no-owner")
+            .arg("--no-privileges")
             .arg("--jobs")
             .arg(format!("{}", self.config.restore_jobs()))
             .arg(&self.backup_path);
@@ -175,6 +249,21 @@ impl Worker {
     {
         match callback() {
             Ok(()) => Ok(()),
+            Err(err) => {
+                self.set_complete(jobid, false)?;
+
+                Err(err)
+            }
+        }
+    }
+
+    fn execute_step_soft<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
+    where
+        F: FnOnce() -> WorkerResult<()>,
+    {
+        match callback() {
+            Ok(()) => Ok(()),
+            Err(_) if self.ignore_errors => Ok(()),
             Err(err) => {
                 self.set_complete(jobid, false)?;
 
@@ -199,16 +288,48 @@ impl Worker {
             .name(format!("worker #{}", jobid))
             .spawn(move || {
                 if drop_database {
-                    self.execute_step(jobid, || self.drop_database(jobid))?;
+                    self.execute_step(jobid, || self.do_drop_database(jobid))?;
                 }
 
                 if create_database {
-                    self.execute_step(jobid, || self.create_database(jobid))?;
+                    self.execute_step(jobid, || self.do_create_database(jobid))?;
                 }
 
-                self.execute_step(jobid, || self.restore_backup(jobid))?;
+                self.execute_step_soft(jobid, || self.do_restore_backup(jobid))?;
                 self.set_complete(jobid, true)
-            }).map_err(WorkerError::spawn_thread_error)?;
+            })
+            .map_err(WorkerError::spawn_thread_error)?;
+
+        Ok(())
+    }
+
+    pub fn restore_schema(
+        self,
+        jobid: usize,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let schema = schema.to_owned();
+        let _ = Builder::new()
+            .name(format!("worker #{}", jobid))
+            .spawn(move || {
+                if drop_database {
+                    self.execute_step(jobid, || self.do_drop_database(jobid))?;
+                }
+
+                if create_database {
+                    self.execute_step(jobid, || self.do_create_database(jobid))?;
+                }
+
+                for name in &schema {
+                    self.execute_step(jobid, || self.do_create_schema(jobid, name))?;
+                    self.execute_step_soft(jobid, || self.do_restore_schema(jobid, name))?;
+                }
+
+                self.set_complete(jobid, true)
+            })
+            .map_err(WorkerError::spawn_thread_error)?;
 
         Ok(())
     }

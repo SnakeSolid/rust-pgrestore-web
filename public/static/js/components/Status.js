@@ -101,12 +101,12 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		const res = reqwest({
 			url: "/api/v1/status",
 			type: "json",
-  			method: "POST",
-  			contentType: "application/json",
-  			data: JSON.stringify({
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify({
 				jobid: self.jobid(),
-				stdout_position: self.stdout_position,
-				stderr_position: self.stderr_position,
+				stdout_position: self.stdoutPosition,
+				stderr_position: self.stderrPosition,
 			}),
 		}).then(function(resp) {
 			if (resp.success) {

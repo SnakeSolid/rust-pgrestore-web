@@ -92,6 +92,13 @@
       <textarea rows="2" data-bind="value: tables"></textarea>
     </div>
 
+    <div class="inline field">
+      <div class="ui checkbox">
+        <input id="ignore_errors" type="checkbox" data-bind="checked: ignoreErrors" tabindex="0" class="hidden"></input>
+        <label for="ignore_errors">Ignore restore errors</label>
+      </div>
+    </div>
+
     <div class="ui buttons">
       <button class="ui primary button" data-bind="click: restoreDatabase">Restore</button>
       <button class="ui button" data-bind="click: convertSlashes">Convert path slashes</button>

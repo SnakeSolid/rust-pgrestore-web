@@ -21,6 +21,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.restore = ko.observable(RESTORE_FULL);
 		this.schemas = ko.observable("");
 		this.tables = ko.observable("");
+		this.ignoreErrors = ko.observable(false);
 		this.parseSchemaVisible = ko.observable(false);
 		this.parseTablesVisible = ko.observable(false);
 		this.isLoading = ko.observable(false);
@@ -137,12 +138,13 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
   			method: "POST",
   			contentType: "application/json",
   			data: JSON.stringify({
-  			  				destination: self.selectedDestination(),
-  			  				backup_path: self.backupPath(),
-  			  				database_name: self.databaseName(),
-  			  				database: self.database(),
-  			  				restore: self.restoreToCall(),
-  			  			}),
+				destination: self.selectedDestination(),
+				backup_path: self.backupPath(),
+				database_name: self.databaseName(),
+				database: self.database(),
+				restore: self.restoreToCall(),
+				ignore_errors: self.ignoreErrors(),
+			}),
 		}).then(function(resp) {
 			if (resp.success) {
 				self.restoreCallback(resp.result);
