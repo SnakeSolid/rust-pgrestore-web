@@ -52,15 +52,19 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		}
 	};
 
-	Status.prototype.checkJobid = function(newValue) {
-		if (newValue !== undefined) {
-			this.startTimer();
-		}
-
+	Status.prototype.reset = function() {
 		this.stage("");
 		this.stdout("");
 		this.stderr("");
 		this.status(STATUS_INPROGRESS);
+	};
+
+	Status.prototype.checkJobid = function(newValue) {
+		this.reset();
+
+		if (newValue !== undefined) {
+			this.startTimer();
+		}
 	};
 
 	Status.prototype.updateStatus = function() {
