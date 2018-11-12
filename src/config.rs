@@ -13,6 +13,7 @@ pub type ConfigRef = Arc<Config>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     max_jobs: usize,
+    restore_jobs: usize,
     commands: Commands,
     destinations: Vec<Destination>,
 }
@@ -20,6 +21,10 @@ pub struct Config {
 impl Config {
     pub fn max_jobs(&self) -> usize {
         self.max_jobs
+    }
+
+    pub fn restore_jobs(&self) -> usize {
+        self.restore_jobs
     }
 
     pub fn commands(&self) -> &Commands {

@@ -153,13 +153,18 @@ impl Worker {
 
         command
             .env("PGPASSWORD", self.destination.password())
+            .arg("--verbose")
             .arg("--host")
             .arg(self.destination.host())
             .arg("--port")
             .arg(format!("{}", self.destination.port()))
             .arg("--username")
             .arg(self.destination.role())
-            .arg(&self.database_name);
+            .arg("--dbname")
+            .arg(&self.database_name)
+            .arg("--jobs")
+            .arg(format!("{}", self.config.restore_jobs()))
+            .arg(&self.backup_path);
 
         self.wait_command(jobid, command)
     }
