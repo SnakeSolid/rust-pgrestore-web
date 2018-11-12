@@ -41,6 +41,7 @@ pub struct Commands {
     createdb_path: String,
     dropdb_path: String,
     pgrestore_path: String,
+    psql_path: String,
 }
 
 impl Commands {
@@ -54,6 +55,10 @@ impl Commands {
 
     pub fn pgrestore_path(&self) -> &str {
         &self.pgrestore_path
+    }
+
+    pub fn psql_path(&self) -> &str {
+        &self.psql_path
     }
 }
 

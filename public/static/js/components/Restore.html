@@ -69,14 +69,14 @@
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="restore_schema" type="radio" name="restore" value="Schema" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
+          <input id="restore_schema" type="radio" name="restore" value="Schema" data-bind="checked: restore" tabindex="0" class="hidden">
           <label for="restore_schema">schema's only</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="restore_tables" type="radio" name="restore" value="Tables" data-bind="checked: restore" tabindex="0" class="hidden" disabled="">
+          <input id="restore_tables" type="radio" name="restore" value="Tables" data-bind="checked: restore" tabindex="0" class="hidden">
           <label for="restore_tables">tables only</label>
         </div>
       </div>
@@ -92,11 +92,21 @@
       <textarea rows="2" data-bind="value: tables"></textarea>
     </div>
 
+    <div class="inline field">
+      <div class="ui checkbox">
+        <input id="ignore_errors" type="checkbox" data-bind="checked: ignoreErrors" tabindex="0" class="hidden"></input>
+        <label for="ignore_errors">Ignore restore errors</label>
+      </div>
+    </div>
+
     <div class="ui buttons">
       <button class="ui primary button" data-bind="click: restoreDatabase">Restore</button>
       <button class="ui button" data-bind="click: convertSlashes">Convert path slashes</button>
-      <button class="ui button" disabled="">Schema's from query</button>
-      <button class="ui button" disabled="">Tables from query</button>
+      <button class="ui button" data-bind="click: schemaFromCode">Schema's from query</button>
+      <button class="ui button" data-bind="click: tablesFromCode">Tables from query</button>
     </div>
   </div>
+
+  <ko-parse-dialog params="callback: schemaCallback, visible: parseSchemaVisible"></ko-parse-dialog>
+  <ko-parse-dialog params="callback: tablesCallback, visible: parseTablesVisible"></ko-parse-dialog>
 </div>

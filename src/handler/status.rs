@@ -35,7 +35,8 @@ impl Handler for StatusHandler {
             self.job_manager
                 .map_job(request.jobid, |job| {
                     Responce::from_job(job, stdout_position, stderr_position)
-                }).map_err(|_| HandlerError::new("Job manager error"))?
+                })
+                .map_err(|_| HandlerError::new("Job manager error"))?
                 .ok_or_else(|| HandlerError::new("Job not found"))
         })
     }
@@ -52,7 +53,9 @@ struct Request {
 struct Responce {
     stage: String,
     stdout: String,
+    stdout_position: usize,
     stderr: String,
+    stderr_position: usize,
     status: Status,
 }
 
@@ -80,7 +83,9 @@ impl Responce {
         Responce {
             stage,
             stdout: stdout.into_owned(),
+            stdout_position: job.stdout().len(),
             stderr: stderr.into_owned(),
+            stderr_position: job.stderr().len(),
             status,
         }
     }

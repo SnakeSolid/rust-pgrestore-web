@@ -1,0 +1,18 @@
+<div class="ui dimmer page active" data-bind="css: { active: visible }">
+  <div class="ui modal active" data-bind="css: { active: visible }">
+    <div class="header">Parse SQL</div>
+
+    <div class="content">
+      <div class="ui form">
+        <div class="field">
+          <textarea rows="25" data-bind="value: text"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="ui positive button" data-bind="click: acceptClick">Parse</div>
+      <div class="ui button" data-bind="click: cancelClick">Cancel</div>
+    </div>
+  </div>
+</div>
