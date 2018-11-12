@@ -1,11 +1,11 @@
 mod destination;
 mod error;
 mod restore;
-mod util;
 mod status;
+mod util;
 
 pub use self::destination::DestinationHandler;
-pub use self::status::StatusHandler;
 pub use self::error::HandlerError;
 pub use self::error::HandlerResult;
 pub use self::restore::RestoreHandler;
+pub use self::status::StatusHandler;

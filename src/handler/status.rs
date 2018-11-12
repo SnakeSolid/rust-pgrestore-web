@@ -89,12 +89,5 @@ impl Responce {
 fn slice_to_string<'a>(buffer: &'a [u8], position: usize) -> Cow<'a, str> {
     let start = position.min(buffer.len());
 
-    println!(
-        "position = {}, buffer.len = {}, start = {}",
-        position,
-        buffer.len(),
-        start
-    );
-
     String::from_utf8_lossy(&buffer[start..])
 }
