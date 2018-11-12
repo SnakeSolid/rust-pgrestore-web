@@ -105,7 +105,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			url: "/api/v1/restore",
 		  	type: "json",
   			method: "POST",
-  			contentType: "pplication/json",
+  			contentType: "application/json",
   			data: JSON.stringify({
   			  				destination: self.selectedDestination(),
   			  				backup_path: self.backupPath(),
