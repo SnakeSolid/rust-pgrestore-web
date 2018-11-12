@@ -8,7 +8,6 @@ extern crate env_logger;
 extern crate iron;
 extern crate mount;
 extern crate router;
-extern crate rusqlite;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
