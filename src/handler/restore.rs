@@ -86,6 +86,7 @@ enum DatabaseType {
     DropAndCreate,
 }
 
+#[serde(tag = "type")]
 #[derive(Debug, Deserialize)]
 enum RestoreType {
     Full,

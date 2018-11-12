@@ -8,6 +8,8 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	const RESTORE_SCHEMA = "Schema";
 	const RESTORE_TABLES = "Tables";
 
+	const EXTRACT_TABLES_RES = [ /from\s+(\w+\.\w+)\b/gi, /join\s+(\w+\.\w+)\b/gi ];
+
 	const Restore = function(params) {
 		this.restoreCallback = params.restoreCallback;
 
@@ -19,6 +21,8 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.restore = ko.observable(RESTORE_FULL);
 		this.schemas = ko.observable("");
 		this.tables = ko.observable("");
+		this.parseSchemaVisible = ko.observable(false);
+		this.parseTablesVisible = ko.observable(false);
 		this.isLoading = ko.observable(false);
 		this.isError = ko.observable(false);
 		this.errorMessage = ko.observable();
@@ -46,6 +50,16 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.isRestoreTables = ko.pureComputed(function() {
 			return this.restore() === RESTORE_TABLES;
 		}, this);
+
+		this.schemaCallback = function(text) {
+			this.restore(RESTORE_SCHEMA);
+			this.schemas(this.parseSchema(text.toLowerCase()).sort().join(", "));
+		}.bind(this);
+
+		this.tablesCallback = function(text) {
+			this.restore(RESTORE_TABLES);
+			this.tables(this.parseTables(text.toLowerCase()).sort().join(", "));
+		}.bind(this);
 
 		this.loadDestinations();
 	};
@@ -99,6 +113,22 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.isLoading(true);
 	};
 
+	Restore.prototype.restoreToCall = function() {
+		const result = {};
+
+		if (this.isRestoreFull()) {
+			result.type = RESTORE_FULL;
+		} else if (this.isRestoreSchemas()) {
+			result.type = RESTORE_SCHEMA;
+			result.schema = this.schemas().split(/[\s,]+/);
+		} else if (this.isRestoreTables()) {
+			result.type = RESTORE_TABLES;
+			result.tables = this.tables().split(/[\s,]+/);
+		}
+
+		return result;
+	};
+
 	Restore.prototype.restoreDatabase = function() {
 		const self = this;
 		const res = reqwest({
@@ -111,7 +141,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
   			  				backup_path: self.backupPath(),
   			  				database_name: self.databaseName(),
   			  				database: self.database(),
-  			  				restore: self.restore(),
+  			  				restore: self.restoreToCall(),
   			  			}),
 		}).then(function(resp) {
 			if (resp.success) {
@@ -142,6 +172,47 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		} else {
 			this.backupPath(backupPath.replace(/\\/g, "/"));
 		}
+	};
+
+	Restore.prototype.schemaFromCode = function() {
+		this.parseSchemaVisible(true);
+	};
+
+	Restore.prototype.tablesFromCode = function() {
+		this.parseTablesVisible(true);
+	};
+
+	Restore.prototype.parseTables = function(text) {
+		const tables = new Set();
+
+		for (const re of EXTRACT_TABLES_RES) {
+			const result = text.match(re);
+
+			if (result !== null) {
+				result.map(function(item) {
+					return item.substring(5).trim();
+				}).forEach(function (item) {
+					tables.add(item);
+				});
+			}
+		}
+
+		return Array.from(tables);
+	};
+
+	Restore.prototype.parseSchema = function(text) {
+		const tables = this.parseTables(text);
+		const schema = new Set();
+
+		tables.forEach(function (tableName) {
+			const index = tableName.indexOf(".");
+
+			if (index > 0) {
+				schema.add(tableName.substring(0, index));
+			}
+		});
+
+		return Array.from(schema);
 	};
 
 	return Restore;
