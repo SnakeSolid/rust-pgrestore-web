@@ -66,7 +66,9 @@ impl Handler for RestoreHandler {
                 RestoreType::Schema { schema } => worker
                     .restore_schema(job_id, &schema, drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
-                _ => unimplemented!(),
+                RestoreType::Tables { tables } => worker
+                    .restore_tables(job_id, &tables, drop_database, create_database)
+                    .map_err(|err| HandlerError::new(err.message()))?,
             }
 
             Ok(job_id)

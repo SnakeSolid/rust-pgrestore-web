@@ -6,6 +6,7 @@ pub use self::error::WorkerResult;
 use config::ConfigRef;
 use config::Destination;
 use jobmanager::JobManagerRef;
+use std::collections::HashSet;
 use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
@@ -243,6 +244,72 @@ impl Worker {
         self.wait_command(jobid, command)
     }
 
+    fn do_truncate_table(&self, jobid: usize, schema: &str, table: &str) -> WorkerResult<()> {
+        info!(
+            "Truncate table {}.{} in database {}",
+            schema, table, self.database_name
+        );
+
+        self.jobmanager
+            .set_stage(jobid, "Truncate table")
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.config.commands().psql_path());
+
+        command
+            .env("PGPASSWORD", self.destination.password())
+            .arg("--host")
+            .arg(self.destination.host())
+            .arg("--port")
+            .arg(format!("{}", self.destination.port()))
+            .arg("--username")
+            .arg(self.destination.role())
+            .arg("--command")
+            .arg(format!("TRUNCATE {}.{}", schema, table))
+            .arg(&self.database_name);
+
+        self.wait_command(jobid, command)
+    }
+
+    fn do_restore_table(&self, jobid: usize, schema: &str, table: &str) -> WorkerResult<()> {
+        info!(
+            "Restoring table {}.{} to {} from {}",
+            schema,
+            table,
+            self.database_name,
+            self.backup_path.display(),
+        );
+
+        self.jobmanager
+            .set_stage(jobid, &format!("Restore table {}.{}", schema, table))
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.config.commands().pgrestore_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.destination.password())
+            .arg("--verbose")
+            .arg("--host")
+            .arg(self.destination.host())
+            .arg("--port")
+            .arg(format!("{}", self.destination.port()))
+            .arg("--username")
+            .arg(self.destination.role())
+            .arg("--dbname")
+            .arg(&self.database_name)
+            .arg("--schema")
+            .arg(schema)
+            .arg("--table")
+            .arg(table)
+            .arg("--data-only")
+            .arg("--no-owner")
+            .arg("--no-privileges")
+            .arg(&self.backup_path);
+
+        self.wait_command(jobid, command)
+    }
+
     fn execute_step<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
     where
         F: FnOnce() -> WorkerResult<()>,
@@ -276,6 +343,30 @@ impl Worker {
         self.jobmanager
             .set_complete(jobid, complete)
             .map_err(WorkerError::set_status_error)
+    }
+
+    fn collect_schema_names(&self, tables: &[String]) -> HashSet<String> {
+        let mut result = HashSet::new();
+
+        for table in tables {
+            if let Some(index) = table.find('.') {
+                result.insert(table[..index].into());
+            }
+        }
+
+        result
+    }
+
+    fn split_table_names(&self, tables: &[String]) -> Vec<(String, String)> {
+        let mut result = Vec::new();
+
+        for table in tables {
+            if let Some(index) = table.find('.') {
+                result.push((table[..index].into(), table[index + 1..].into()));
+            }
+        }
+
+        result
     }
 
     pub fn restore_full(
@@ -325,6 +416,41 @@ impl Worker {
                 for name in &schema {
                     self.execute_step(jobid, || self.do_create_schema(jobid, name))?;
                     self.execute_step_soft(jobid, || self.do_restore_schema(jobid, name))?;
+                }
+
+                self.set_complete(jobid, true)
+            })
+            .map_err(WorkerError::spawn_thread_error)?;
+
+        Ok(())
+    }
+
+    pub fn restore_tables(
+        self,
+        jobid: usize,
+        tables: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let tables = tables.to_owned();
+        let _ = Builder::new()
+            .name(format!("worker #{}", jobid))
+            .spawn(move || {
+                if drop_database {
+                    self.execute_step(jobid, || self.do_drop_database(jobid))?;
+                }
+
+                if create_database {
+                    self.execute_step(jobid, || self.do_create_database(jobid))?;
+                }
+
+                for name in &self.collect_schema_names(&tables) {
+                    self.execute_step(jobid, || self.do_create_schema(jobid, name))?;
+                }
+
+                for (schema, table) in &self.split_table_names(&tables) {
+                    self.execute_step(jobid, || self.do_truncate_table(jobid, schema, table))?;
+                    self.execute_step_soft(jobid, || self.do_restore_table(jobid, schema, table))?;
                 }
 
                 self.set_complete(jobid, true)
