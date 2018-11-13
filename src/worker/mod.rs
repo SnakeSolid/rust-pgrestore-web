@@ -244,6 +244,44 @@ impl Worker {
         self.wait_command(jobid, command)
     }
 
+    fn do_restore_schema_only(&self, jobid: usize, name: &str) -> WorkerResult<()> {
+        info!(
+            "Restoring schema only {} to {} from {}",
+            name,
+            self.database_name,
+            self.backup_path.display(),
+        );
+
+        self.jobmanager
+            .set_stage(jobid, &format!("Restore schema {}", name))
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.config.commands().pgrestore_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.destination.password())
+            .arg("--verbose")
+            .arg("--host")
+            .arg(self.destination.host())
+            .arg("--port")
+            .arg(format!("{}", self.destination.port()))
+            .arg("--username")
+            .arg(self.destination.role())
+            .arg("--dbname")
+            .arg(&self.database_name)
+            .arg("--schema")
+            .arg(name)
+            .arg("--schema-only")
+            .arg("--no-owner")
+            .arg("--no-privileges")
+            .arg("--jobs")
+            .arg(format!("{}", self.config.restore_jobs()))
+            .arg(&self.backup_path);
+
+        self.wait_command(jobid, command)
+    }
+
     fn do_truncate_table(&self, jobid: usize, schema: &str, table: &str) -> WorkerResult<()> {
         info!(
             "Truncate table {}.{} in database {}",
@@ -446,6 +484,7 @@ impl Worker {
 
                 for name in &self.collect_schema_names(&tables) {
                     self.execute_step(jobid, || self.do_create_schema(jobid, name))?;
+                    self.execute_step_soft(jobid, || self.do_restore_schema_only(jobid, name))?;
                 }
 
                 for (schema, table) in &self.split_table_names(&tables) {
