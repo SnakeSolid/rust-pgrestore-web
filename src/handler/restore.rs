@@ -54,20 +54,20 @@ impl Handler for RestoreHandler {
                 self.config.clone(),
                 self.job_manager.clone(),
                 destination,
-                request.backup_path.as_ref(),
                 request.database_name.as_ref(),
                 request.ignore_errors,
             );
+            let backup_path = request.backup_path.as_ref();
 
             match request.restore {
                 RestoreType::Full => worker
-                    .restore_full(job_id, drop_database, create_database)
+                    .restore_full(job_id, backup_path, drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
                 RestoreType::Schema { schema } => worker
-                    .restore_schema(job_id, &schema, drop_database, create_database)
+                    .restore_schema(job_id, backup_path, &schema, drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
                 RestoreType::Tables { tables } => worker
-                    .restore_tables(job_id, &tables, drop_database, create_database)
+                    .restore_tables(job_id, backup_path, &tables, drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
             }
 
