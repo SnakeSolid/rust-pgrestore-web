@@ -43,6 +43,7 @@ impl Config {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct HttpConfig {
+    download_directory: String,
     #[serde(default = "default_root_certificates")]
     root_certificates: Vec<String>,
     #[serde(default)]
@@ -52,6 +53,10 @@ pub struct HttpConfig {
 }
 
 impl HttpConfig {
+    pub fn download_directory(&self) -> &str {
+        &self.download_directory
+    }
+
     pub fn root_certificates(&self) -> &[String] {
         &self.root_certificates
     }

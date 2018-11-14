@@ -37,6 +37,7 @@ impl HttpClientRef {
 struct HttpClient {
     config: ConfigRef,
     client: Client,
+    download_directory: PathBuf,
     file_seq_no: usize,
 }
 
@@ -71,9 +72,12 @@ impl HttpClient {
             builder = builder.danger_accept_invalid_certs(true);
         }
 
+        let download_directory = config.http_config().download_directory().into();
+
         Ok(HttpClient {
             config,
             client: builder.build().map_err(HttpClientError::reqwest_error)?,
+            download_directory,
             file_seq_no: 0,
         })
     }
@@ -82,16 +86,19 @@ impl HttpClient {
     where
         U: IntoUrl + Display,
     {
-        info!("Downloading file {} to {}", url, self.file_seq_no);
+        let file_path = self
+            .download_directory
+            .join(format!("{}.temp", self.file_seq_no));
 
-        let file_name = format!("{}.temp.backup", self.file_seq_no);
+        info!("Downloading file {} to {}", url, file_path.display());
+
         let mut body = self
             .client
             .get(url)
             .send()
             .map_err(HttpClientError::reqwest_error)?;
-        let mut writer = File::create(&file_name).map_err(HttpClientError::io_error)?;
-        let result = PathHandle::new(file_name);
+        let mut writer = File::create(&file_path).map_err(HttpClientError::io_error)?;
+        let result = PathHandle::new(file_path);
 
         body.copy_to(&mut writer)
             .map_err(HttpClientError::reqwest_error)?;
