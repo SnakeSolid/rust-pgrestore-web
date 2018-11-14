@@ -23,8 +23,26 @@
     </div>
 
     <div class="field" data-bind="css: { error: isBackupPathInvalid }">
-      <label for="backup_file">Backup file path:</label>
-      <input id="backup_file" type="text" data-bind="textInput: backupPath" placeholder="/path.backup">
+      <label for="backup">Backup file path:</label>
+      <input id="backup" type="text" data-bind="textInput: backup" placeholder="Path to backup">
+    </div>
+
+    <div class="inline fields">
+      <label>Restore:</label>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="backup_path" type="radio" name="backup_type" value="Path" data-bind="checked: backupType" checked="" tabindex="0" class="hidden">
+          <label for="backup_path">Path</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input id="backup_url" type="radio" name="backup_type" value="Url" data-bind="checked: backupType" tabindex="0" class="hidden">
+          <label for="backup_url">URL</label>
+        </div>
+      </div>
     </div>
 
     <div class="field" data-bind="css: { error: isDatabaseNameInvalid }">

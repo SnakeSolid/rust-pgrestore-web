@@ -9,6 +9,9 @@ use self::command::WorkerSettings;
 
 use config::ConfigRef;
 use config::Destination;
+use http::HttpClientRef;
+use http::HttpClientResult;
+use http::PathHandle;
 use jobmanager::JobManagerRef;
 use std::collections::HashSet;
 use std::path::Path;
@@ -40,6 +43,208 @@ impl Worker {
         }
     }
 
+    pub fn restore_file_full(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let backup_path = backup_path.to_path_buf();
+
+        self.do_async(jobid, move |worker| {
+            worker.execute_backup_full(jobid, &backup_path, drop_database, create_database)
+        })
+    }
+
+    pub fn restore_file_schema(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let backup_path = backup_path.to_path_buf();
+        let schema = schema.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            worker.execute_backup_schema(
+                jobid,
+                backup_path.as_ref(),
+                &schema,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    pub fn restore_file_tables(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        tables: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let backup_path = backup_path.to_path_buf();
+        let tables = tables.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            worker.execute_backup_tables(
+                jobid,
+                backup_path.as_ref(),
+                &tables,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    pub fn restore_url_full(
+        self,
+        jobid: usize,
+        url: &str,
+        http_client: HttpClientRef,
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let url = url.to_string();
+
+        self.do_async(jobid, move |worker| {
+            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
+
+            worker.execute_backup_full(jobid, backup_path.as_ref(), drop_database, create_database)
+        })
+    }
+
+    pub fn restore_url_schema(
+        self,
+        jobid: usize,
+        url: &str,
+        http_client: HttpClientRef,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let url = url.to_string();
+        let schema = schema.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
+
+            worker.execute_backup_schema(
+                jobid,
+                backup_path.as_ref(),
+                &schema,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    pub fn restore_url_tables(
+        self,
+        jobid: usize,
+        url: &str,
+        http_client: HttpClientRef,
+        tables: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let url = url.to_string();
+        let tables = tables.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
+
+            worker.execute_backup_tables(
+                jobid,
+                backup_path.as_ref(),
+                &tables,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    fn execute_backup_full(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let command = WorkerCommand::new(jobid, &self);
+
+        if drop_database {
+            self.execute_step(jobid, || command.drop_database())?;
+        }
+
+        if create_database {
+            self.execute_step(jobid, || command.create_database())?;
+        }
+
+        self.execute_step_soft(jobid, || command.restore_backup(backup_path.as_ref()))?;
+        self.set_complete(jobid, true)
+    }
+
+    fn execute_backup_schema(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let command = WorkerCommand::new(jobid, &self);
+
+        if drop_database {
+            self.execute_step(jobid, || command.drop_database())?;
+        }
+
+        if create_database {
+            self.execute_step(jobid, || command.create_database())?;
+        }
+
+        for name in schema {
+            self.execute_step(jobid, || command.create_schema(name))?;
+            self.execute_step_soft(jobid, || command.restore_schema(name, &backup_path))?;
+        }
+
+        self.set_complete(jobid, true)
+    }
+
+    fn execute_backup_tables(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        tables: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let mut command = WorkerCommand::new(jobid, &self);
+
+        if drop_database {
+            self.execute_step(jobid, || command.drop_database())?;
+        }
+
+        if create_database {
+            self.execute_step(jobid, || command.create_database())?;
+
+            for name in &self.collect_schema_names(&tables) {
+                self.execute_step(jobid, || command.create_schema(name))?;
+                self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
+            }
+        }
+
+        for (schema, table) in &self.split_table_names(&tables) {
+            self.execute_step(jobid, || command.truncate_table(schema, table))?;
+            self.execute_step_soft(jobid, || command.restore_table(schema, table, &backup_path))?;
+        }
+
+        self.set_complete(jobid, true)
+    }
     fn execute_step<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
     where
         F: FnOnce() -> WorkerResult<()>,
@@ -50,6 +255,23 @@ impl Worker {
                 self.set_complete(jobid, false)?;
 
                 Err(err)
+            }
+        }
+    }
+
+    fn execute_download<F>(&self, jobid: usize, callback: F) -> WorkerResult<PathHandle>
+    where
+        F: FnOnce() -> HttpClientResult<PathHandle>,
+    {
+        match callback() {
+            Ok(path) => Ok(path),
+            Err(err) => {
+                self.job_manager()
+                    .extend_stderr(jobid, format!("{}", err).as_bytes())
+                    .map_err(WorkerError::extend_stdout_error)?;
+                self.set_complete(jobid, false)?;
+
+                Err(WorkerError::download_error(err))
             }
         }
     }
@@ -108,106 +330,6 @@ impl Worker {
             .name(format!("worker #{}", jobid))
             .spawn(move || callback(self))
             .map_err(WorkerError::spawn_thread_error)?;
-
-        Ok(())
-    }
-
-    pub fn restore_full(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let backup_path = backup_path.to_path_buf();
-
-        self.do_async(jobid, move |worker| {
-            let command = WorkerCommand::new(jobid, &worker);
-
-            if drop_database {
-                worker.execute_step(jobid, || command.drop_database())?;
-            }
-
-            if create_database {
-                worker.execute_step(jobid, || command.create_database())?;
-            }
-
-            worker.execute_step_soft(jobid, || command.restore_backup(&backup_path))?;
-            worker.set_complete(jobid, true)
-        })
-    }
-
-    pub fn restore_schema(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        schema: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let backup_path = backup_path.to_path_buf();
-        let schema = schema.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            let command = WorkerCommand::new(jobid, &worker);
-
-            if drop_database {
-                worker.execute_step(jobid, || command.drop_database())?;
-            }
-
-            if create_database {
-                worker.execute_step(jobid, || command.create_database())?;
-            }
-
-            for name in &schema {
-                worker.execute_step(jobid, || command.create_schema(name))?;
-                worker.execute_step_soft(jobid, || command.restore_schema(name, &backup_path))?;
-            }
-
-            worker.set_complete(jobid, true)
-        })?;
-
-        Ok(())
-    }
-
-    pub fn restore_tables(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        tables: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let backup_path = backup_path.to_path_buf();
-        let tables = tables.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            let mut command = WorkerCommand::new(jobid, &worker);
-
-            if drop_database {
-                worker.execute_step(jobid, || command.drop_database())?;
-            }
-
-            if create_database {
-                worker.execute_step(jobid, || command.create_database())?;
-
-                for name in &worker.collect_schema_names(&tables) {
-                    worker.execute_step(jobid, || command.create_schema(name))?;
-                    worker.execute_step_soft(jobid, || {
-                        command.restore_schema_only(name, &backup_path)
-                    })?;
-                }
-            }
-
-            for (schema, table) in &worker.split_table_names(&tables) {
-                worker.execute_step(jobid, || command.truncate_table(schema, table))?;
-                worker.execute_step_soft(jobid, || {
-                    command.restore_table(schema, table, &backup_path)
-                })?;
-            }
-
-            worker.set_complete(jobid, true)
-        })?;
 
         Ok(())
     }

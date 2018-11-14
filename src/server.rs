@@ -2,13 +2,19 @@ use config::ConfigRef;
 use handler::DestinationHandler;
 use handler::RestoreHandler;
 use handler::StatusHandler;
+use http::HttpClientRef;
 use iron::Iron;
 use jobmanager::JobManagerRef;
 use mount::Mount;
 use options::Options;
 use staticfile::Static;
 
-pub fn start(options: &Options, config: ConfigRef, job_manager: JobManagerRef) -> () {
+pub fn start(
+    options: &Options,
+    config: ConfigRef,
+    job_manager: JobManagerRef,
+    http_client: HttpClientRef,
+) -> () {
     let mut mount = Mount::new();
     mount.mount(
         "/api/v1/destination",
@@ -16,7 +22,7 @@ pub fn start(options: &Options, config: ConfigRef, job_manager: JobManagerRef) -
     );
     mount.mount(
         "/api/v1/restore",
-        RestoreHandler::new(config.clone(), job_manager.clone()),
+        RestoreHandler::new(config.clone(), job_manager.clone(), http_client.clone()),
     );
     mount.mount(
         "/api/v1/status",

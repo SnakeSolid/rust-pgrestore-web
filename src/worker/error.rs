@@ -1,3 +1,4 @@
+use http::HttpClientError;
 use jobmanager::JobManagerError;
 use std::error::Error;
 use std::fmt::Display;
@@ -64,6 +65,10 @@ impl WorkerError {
     pub fn set_status_error(error: JobManagerError) -> Self {
         warn!("Job manager set status error - {}", error);
 
+        WorkerError::new(&format!("{}", error))
+    }
+
+    pub fn download_error(error: HttpClientError) -> Self {
         WorkerError::new(&format!("{}", error))
     }
 

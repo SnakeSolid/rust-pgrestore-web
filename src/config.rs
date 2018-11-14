@@ -10,10 +10,11 @@ use std::sync::Arc;
 
 pub type ConfigRef = Arc<Config>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
     max_jobs: usize,
     restore_jobs: usize,
+    http_config: HttpConfig,
     commands: Commands,
     destinations: Vec<Destination>,
 }
@@ -27,6 +28,10 @@ impl Config {
         self.restore_jobs
     }
 
+    pub fn http_config(&self) -> &HttpConfig {
+        &self.http_config
+    }
+
     pub fn commands(&self) -> &Commands {
         &self.commands
     }
@@ -36,7 +41,35 @@ impl Config {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
+pub struct HttpConfig {
+    #[serde(default = "default_root_certificates")]
+    root_certificates: Vec<String>,
+    #[serde(default)]
+    accept_invalid_hostnames: bool,
+    #[serde(default)]
+    accept_invalid_certs: bool,
+}
+
+impl HttpConfig {
+    pub fn root_certificates(&self) -> &[String] {
+        &self.root_certificates
+    }
+
+    pub fn accept_invalid_hostnames(&self) -> bool {
+        self.accept_invalid_hostnames
+    }
+
+    pub fn accept_invalid_certs(&self) -> bool {
+        self.accept_invalid_certs
+    }
+}
+
+pub fn default_root_certificates() -> Vec<String> {
+    Vec::with_capacity(0)
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Commands {
     createdb_path: String,
     dropdb_path: String,
@@ -62,7 +95,7 @@ impl Commands {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Destination {
     host: String,
     port: u16,

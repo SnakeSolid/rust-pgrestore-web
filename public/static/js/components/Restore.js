@@ -1,6 +1,8 @@
 "use strict";
 
 define([ "knockout", "reqwest" ], function(ko, reqwest) {
+	const BACKUP_PATH = "Path";
+	const BACKUP_URL = "Url";
 	const DATABASE_EXISTS = "Exists";
 	const DATABASE_CREATE = "Create";
 	const DATABASE_DROPANDCREATE = "DropAndCreate";
@@ -15,7 +17,8 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 		this.availableDestinations = ko.observableArray();
 		this.selectedDestination = ko.observable();
-		this.backupPath = ko.observable("");
+		this.backup = ko.observable("");
+		this.backupType = ko.observable(BACKUP_PATH);
 		this.databaseName = ko.observable("");
 		this.database = ko.observable(DATABASE_CREATE);
 		this.restore = ko.observable(RESTORE_FULL);
@@ -28,12 +31,20 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.isError = ko.observable(false);
 		this.errorMessage = ko.observable();
 
+		this.isBackupPath = ko.pureComputed(function() {
+			return this.backupType() === BACKUP_PATH;
+		}, this);
+
+		this.isBackupUrl = ko.pureComputed(function() {
+			return this.backupType() === BACKUP_URL;
+		}, this);
+
 		this.isDestinationInvalid = ko.pureComputed(function() {
 			return this.selectedDestination() === undefined;
 		}, this);
 
 		this.isBackupPathInvalid = ko.pureComputed(function() {
-			return this.backupPath().length === 0;
+			return this.backup().length === 0;
 		}, this);
 
 		this.isDatabaseNameInvalid = ko.pureComputed(function() {
@@ -61,6 +72,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			this.restore(RESTORE_TABLES);
 			this.tables(this.parseTables(text.toLowerCase()).sort().join(", "));
 		}.bind(this);
+
+		this.backup.subscribe(function(value) {
+			if (value.startsWith("http://") || value.startsWith("https://")) {
+				this.backupType(BACKUP_URL);
+			} else {
+				this.backupType(BACKUP_PATH);
+			}
+		}.bind(this));
 
 		this.loadDestinations();
 	};
@@ -114,6 +133,20 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.isLoading(true);
 	};
 
+	Restore.prototype.backupToCall = function() {
+		const result = {};
+
+		if (this.isBackupPath()) {
+			result.type = BACKUP_PATH;
+			result.path = this.backup();
+		} else if (this.isBackupUrl()) {
+			result.type = BACKUP_URL;
+			result.url = this.backup();
+		}
+
+		return result;
+	};
+
 	Restore.prototype.restoreToCall = function() {
 		const result = {};
 
@@ -139,7 +172,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
   			contentType: "application/json",
   			data: JSON.stringify({
 				destination: self.selectedDestination(),
-				backup_path: self.backupPath(),
+				backup: self.backupToCall(),
 				database_name: self.databaseName(),
 				database: self.database(),
 				restore: self.restoreToCall(),
@@ -165,14 +198,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	};
 
 	Restore.prototype.convertSlashes = function() {
-		const backupPath = this.backupPath();
-		const nForwardSlashes = backupPath.split(/\//).length;
-		const nBackwardSlashes = backupPath.split(/\\/).length;
+		const backup = this.backup();
+		const nForwardSlashes = backup.split(/\//).length;
+		const nBackwardSlashes = backup.split(/\\/).length;
 
 		if (nForwardSlashes > nBackwardSlashes) {
-			this.backupPath(backupPath.replace(/\//g, "\\"));
+			this.backup(backup.replace(/\//g, "\\"));
 		} else {
-			this.backupPath(backupPath.replace(/\\/g, "/"));
+			this.backup(backup.replace(/\\/g, "/"));
 		}
 	};
 
