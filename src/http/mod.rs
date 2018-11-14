@@ -59,13 +59,13 @@ impl HttpClient {
             builder = builder.add_root_certificate(certificate);
         }
 
-        if !config.http_config().accept_invalid_hostnames() {
+        if config.http_config().accept_invalid_hostnames() {
             debug!("Accept invalid host names");
 
             builder = builder.danger_accept_invalid_hostnames(true);
         }
 
-        if !config.http_config().accept_invalid_certs() {
+        if config.http_config().accept_invalid_certs() {
             debug!("Accept invalid certificates");
 
             builder = builder.danger_accept_invalid_certs(true);
