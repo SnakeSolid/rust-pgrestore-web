@@ -13,11 +13,11 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	const EXTRACT_TABLES_RES = [ /from\s+(\w+\.\w+)\b/gi, /join\s+(\w+\.\w+)\b/gi ];
 
 	const Restore = function(params) {
+		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
 
 		this.availableDestinations = ko.observableArray();
 		this.selectedDestination = ko.observable();
-		this.backup = ko.observable("");
 		this.backupType = ko.observable(BACKUP_PATH);
 		this.databaseName = ko.observable("");
 		this.database = ko.observable(DATABASE_CREATE);

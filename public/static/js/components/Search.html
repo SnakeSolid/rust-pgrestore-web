@@ -1,0 +1,23 @@
+<div class="ui segment">
+  <h3>Backup Search</h3>
+
+  <div class="ui icon negative message" data-bind="visible: isError">
+    <div class="content">
+      <h3>Error</h3>
+      <p data-bind="text: errorMessage"></p>
+    </div>
+  </div>
+
+  <div class="ui fluid action input" data-bind="css: { loading: isLoading }">
+    <input type="text" placeholder="Search..." data-bind="value: query">
+    <button class="ui button" data-bind="click: findBackups">Search</button>
+  </div>
+
+  <table class="ui selectable compact table" data-bind="visible: hasReults">
+    <tbody data-bind="foreach: results">
+      <tr data-bind="click: $component.selectResult">
+        <td><a href="#" data-bind="text: $data"></a></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

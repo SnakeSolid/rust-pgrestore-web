@@ -35,8 +35,7 @@ impl Handler for StatusHandler {
             self.job_manager
                 .map_job(request.jobid, |job| {
                     Responce::from_job(job, stdout_position, stderr_position)
-                })
-                .map_err(|_| HandlerError::new("Job manager error"))?
+                }).map_err(|_| HandlerError::new("Job manager error"))?
                 .ok_or_else(|| HandlerError::new("Job not found"))
         })
     }

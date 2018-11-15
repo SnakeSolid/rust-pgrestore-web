@@ -1,6 +1,7 @@
 use config::ConfigRef;
 use handler::DestinationHandler;
 use handler::RestoreHandler;
+use handler::SearchHandler;
 use handler::StatusHandler;
 use http::HttpClientRef;
 use iron::Iron;
@@ -28,6 +29,7 @@ pub fn start(
         "/api/v1/status",
         StatusHandler::new(config.clone(), job_manager.clone()),
     );
+    mount.mount("/api/v1/search", SearchHandler::new(config.clone()));
     mount.mount("/static", Static::new("public/static"));
     mount.mount("/", Static::new("public"));
 

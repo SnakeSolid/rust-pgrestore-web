@@ -1,6 +1,11 @@
 "use strict";
 
 define([ "knockout" ], function(ko) {
+	ko.components.register("ko-search", {
+		viewModel: { require: "components/Search" },
+		template: { require: "text!components/Search.html" }
+	});
+
 	ko.components.register("ko-restore", {
 		viewModel: { require: "components/Restore" },
 		template: { require: "text!components/Restore.html" }

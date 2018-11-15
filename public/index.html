@@ -20,13 +20,18 @@
       <div class="ui secondary pointing menu">
         <div class="header item">PG Restore Web</div>
 
+        <a class="item" data-bind="click: setSearchPage, css: { active: isSearchVisible }">Search</a>
         <a class="item" data-bind="click: setRestorePage, css: { active: isRestoreVisible }">Restore</a>
         <a class="item" data-bind="click: setStatusPage, css: { active: isStatusVisible }">Status</a>
         <a class="item" data-bind="click: setJobsPage, css: { active: isJobsVisible }">Jobs</a>
       </div>
 
+      <div data-bind="visible: isSearchVisible">
+        <ko-search params="callback: searchCallback"></ko-search>
+      </div>
+
       <div data-bind="visible: isRestoreVisible">
-        <ko-restore params="restoreCallback: restoreCallback"></ko-restore>
+        <ko-restore params="backup: backupSearchResult, restoreCallback: restoreCallback"></ko-restore>
       </div>
 
       <div data-bind="visible: isStatusVisible">

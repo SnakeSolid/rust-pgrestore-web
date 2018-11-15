@@ -18,7 +18,6 @@
           value: selectedDestination,
           optionsCaption: 'Choose destination...'
         " class="ui dropdown">
-        <option value="0">anaconda@localhost:5432</option>
       </select>
     </div>
 
@@ -33,14 +32,14 @@
       <div class="field">
         <div class="ui radio checkbox">
           <input id="backup_path" type="radio" name="backup_type" value="Path" data-bind="checked: backupType" checked="" tabindex="0" class="hidden">
-          <label for="backup_path">Path</label>
+          <label for="backup_path">use as path</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
           <input id="backup_url" type="radio" name="backup_type" value="Url" data-bind="checked: backupType" tabindex="0" class="hidden">
-          <label for="backup_url">URL</label>
+          <label for="backup_url">use as URL</label>
         </div>
       </div>
     </div>
@@ -119,9 +118,9 @@
 
     <div class="ui buttons">
       <button class="ui primary button" data-bind="click: restoreDatabase">Restore</button>
-      <button class="ui button" data-bind="click: convertSlashes">Convert path slashes</button>
-      <button class="ui button" data-bind="click: schemaFromCode">Schema's from query</button>
-      <button class="ui button" data-bind="click: tablesFromCode">Tables from query</button>
+      <button class="ui secondary button" data-bind="click: convertSlashes">Convert path slashes</button>
+      <button class="ui secondary button" data-bind="click: schemaFromCode">Schema's from query</button>
+      <button class="ui secondary button" data-bind="click: tablesFromCode">Tables from query</button>
     </div>
   </div>
 

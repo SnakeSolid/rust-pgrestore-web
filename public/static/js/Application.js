@@ -1,6 +1,7 @@
 "use strict";
 
 define([ "knockout" ], function(ko) {
+	const PAGE_SEARCH = "Search";
 	const PAGE_RESTORE = "Restore";
 	const PAGE_STATUS = "Status";
 	const PAGE_JOBS = "Jobs";
@@ -8,6 +9,11 @@ define([ "knockout" ], function(ko) {
 	const Application = function() {
 		this.currentPage = ko.observable(PAGE_RESTORE);
 		this.currentJobid = ko.observable();
+		this.backupSearchResult = ko.observable("");
+
+		this.isSearchVisible = ko.pureComputed(function() {
+			return this.currentPage() === PAGE_SEARCH;
+		}, this);
 
 		this.isRestoreVisible = ko.pureComputed(function() {
 			return this.currentPage() === PAGE_RESTORE;
@@ -21,14 +27,19 @@ define([ "knockout" ], function(ko) {
 			return this.currentPage() === PAGE_JOBS;
 		}, this);
 
-		const self = this;
+		this.searchCallback = function(value) {
+			this.backupSearchResult(value);
+			this.currentPage(PAGE_RESTORE);
+		}.bind(this);
 
-		// TODO Replace this workaround with correct solution
-		// this bind caller context instead of application
 		this.restoreCallback = function(jobid) {
-			self.currentJobid(jobid);
-			self.currentPage(PAGE_STATUS);
-		};
+			this.currentJobid(jobid);
+			this.currentPage(PAGE_STATUS);
+		}.bind(this);
+	};
+
+	Application.prototype.setSearchPage = function() {
+		this.currentPage(PAGE_SEARCH);
 	};
 
 	Application.prototype.setRestorePage = function() {
