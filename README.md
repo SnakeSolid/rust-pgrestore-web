@@ -26,6 +26,19 @@ Simple configuration example:
 max_jobs: 10
 restore_jobs: 8
 
+search_config:
+  interval: 21600
+  recursion_limit: 8
+  directories:
+    - "/mnt/tape1/backups"
+    - "/mnt/tape2/backups"
+  extensions:
+    - "dump"
+    - "backup"
+
+http_config:
+  download_directory: /tmp
+
 commands:
   createdb_path: /usr/bin/createdb
   dropdb_path: /usr/bin/dropdb
