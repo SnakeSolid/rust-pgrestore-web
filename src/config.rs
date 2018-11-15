@@ -14,6 +14,7 @@ pub type ConfigRef = Arc<Config>;
 pub struct Config {
     max_jobs: usize,
     restore_jobs: usize,
+    search_config: SearchConfig,
     http_config: HttpConfig,
     commands: Commands,
     destinations: Vec<Destination>,
@@ -26,6 +27,10 @@ impl Config {
 
     pub fn restore_jobs(&self) -> usize {
         self.restore_jobs
+    }
+
+    pub fn search_config(&self) -> &SearchConfig {
+        &self.search_config
     }
 
     pub fn http_config(&self) -> &HttpConfig {
@@ -42,9 +47,26 @@ impl Config {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct SearchConfig {
+    interval: u64,
+    #[serde(default)]
+    directories: Vec<String>,
+}
+
+impl SearchConfig {
+    pub fn interval(&self) -> u64 {
+        self.interval
+    }
+
+    pub fn directories(&self) -> &[String] {
+        &self.directories
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct HttpConfig {
     download_directory: String,
-    #[serde(default = "default_root_certificates")]
+    #[serde(default)]
     root_certificates: Vec<String>,
     #[serde(default)]
     accept_invalid_hostnames: bool,
@@ -68,10 +90,6 @@ impl HttpConfig {
     pub fn accept_invalid_certs(&self) -> bool {
         self.accept_invalid_certs
     }
-}
-
-pub fn default_root_certificates() -> Vec<String> {
-    Vec::with_capacity(0)
 }
 
 #[derive(Debug, Deserialize)]

@@ -8,7 +8,7 @@ use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
 use jobmanager::JobManagerRef;
-use worker::Worker;
+use worker::RestoreWorker;
 
 #[derive(Debug)]
 pub struct RestoreHandler {
@@ -63,7 +63,7 @@ impl Handler for RestoreHandler {
                 .job_manager
                 .next_jobid()
                 .map_err(|_| HandlerError::new("Failed to create job"))?;
-            let worker = Worker::new(
+            let worker = RestoreWorker::new(
                 self.config.clone(),
                 self.job_manager.clone(),
                 destination,
@@ -82,7 +82,8 @@ impl Handler for RestoreHandler {
                         &schema,
                         drop_database,
                         create_database,
-                    ).map_err(|err| HandlerError::new(err.message()))?,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
                 (RestoreType::Tables { tables }, Backup::Path { path }) => worker
                     .restore_file_tables(
                         job_id,
@@ -90,7 +91,8 @@ impl Handler for RestoreHandler {
                         &tables,
                         drop_database,
                         create_database,
-                    ).map_err(|err| HandlerError::new(err.message()))?,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
                 (RestoreType::Full, Backup::Url { url }) => worker
                     .restore_url_full(
                         job_id,
@@ -98,7 +100,8 @@ impl Handler for RestoreHandler {
                         self.http_client.clone(),
                         drop_database,
                         create_database,
-                    ).map_err(|err| HandlerError::new(err.message()))?,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
                 (RestoreType::Schema { schema }, Backup::Url { url }) => worker
                     .restore_url_schema(
                         job_id,
@@ -107,7 +110,8 @@ impl Handler for RestoreHandler {
                         &schema,
                         drop_database,
                         create_database,
-                    ).map_err(|err| HandlerError::new(err.message()))?,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
                 (RestoreType::Tables { tables }, Backup::Url { url }) => worker
                     .restore_url_tables(
                         job_id,
@@ -116,7 +120,8 @@ impl Handler for RestoreHandler {
                         &tables,
                         drop_database,
                         create_database,
-                    ).map_err(|err| HandlerError::new(err.message()))?,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
             }
 
             Ok(job_id)

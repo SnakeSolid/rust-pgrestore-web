@@ -8,12 +8,14 @@ use iron::Iron;
 use jobmanager::JobManagerRef;
 use mount::Mount;
 use options::Options;
+use pathmanager::PathManagerRef;
 use staticfile::Static;
 
 pub fn start(
     options: &Options,
     config: ConfigRef,
     job_manager: JobManagerRef,
+    path_manager: PathManagerRef,
     http_client: HttpClientRef,
 ) -> () {
     let mut mount = Mount::new();
@@ -29,7 +31,10 @@ pub fn start(
         "/api/v1/status",
         StatusHandler::new(config.clone(), job_manager.clone()),
     );
-    mount.mount("/api/v1/search", SearchHandler::new(config.clone()));
+    mount.mount(
+        "/api/v1/search",
+        SearchHandler::new(config.clone(), path_manager.clone()),
+    );
     mount.mount("/static", Static::new("public/static"));
     mount.mount("/", Static::new("public"));
 
