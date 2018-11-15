@@ -49,8 +49,9 @@ impl Config {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SearchConfig {
     interval: u64,
-    #[serde(default)]
+    recursion_limit: Option<usize>,
     directories: Vec<String>,
+    extensions: Vec<String>,
 }
 
 impl SearchConfig {
@@ -58,8 +59,16 @@ impl SearchConfig {
         self.interval
     }
 
+    pub fn recursion_limit(&self) -> Option<usize> {
+        self.recursion_limit
+    }
+
     pub fn directories(&self) -> &[String] {
         &self.directories
+    }
+
+    pub fn extensions(&self) -> &[String] {
+        &self.extensions
     }
 }
 

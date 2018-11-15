@@ -83,7 +83,7 @@ impl PathManager {
 
         for word in query
             .to_lowercase()
-            .split(|c| " _\\/".contains(c))
+            .split(char::is_whitespace)
             .filter(|w| !w.is_empty())
         {
             let weight = word.len();
@@ -97,13 +97,13 @@ impl PathManager {
             }
         }
 
-        let mut results: Vec<_> = query_results.into_iter().collect();
+        let mut results: Vec<_> = query_results.into_iter().map(|(id, w)| (w, id)).collect();
 
         results.sort_by(|a, b| b.cmp(a));
         results
             .into_iter()
             .take(n)
-            .filter_map(|(id, _)| self.paths.get(&id))
+            .filter_map(|(_, id)| self.paths.get(&id))
             .for_each(|p| callback(p));
     }
 
@@ -206,6 +206,21 @@ mod tests {
         manager.add_path(&path_3);
         manager.query_paths("file other", 2, |p| result.push(p.to_path_buf()));
 
-        assert_eq!(vec![path_3, path_2], result);
+        assert_eq!(vec![path_2, path_3], result);
+    }
+
+    #[test]
+    fn clear_shold_remove_all_paths() {
+        let path_1: PathBuf = "/test/dir/file.backup".into();
+        let path_2: PathBuf = "/test/other/file.backup".into();
+        let mut manager = PathManager::new();
+        let mut result = Vec::new();
+
+        manager.add_path(&path_1);
+        manager.add_path(&path_2);
+        manager.clear();
+        manager.query_paths("file other", 2, |p| result.push(p.to_path_buf()));
+
+        assert_eq!(Vec::<PathBuf>::new(), result);
     }
 }

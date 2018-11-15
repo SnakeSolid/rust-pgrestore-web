@@ -5,6 +5,8 @@ pub use self::error::WorkerResult;
 
 use config::ConfigRef;
 use pathmanager::PathManagerRef;
+use std::collections::HashSet;
+use std::ffi::OsString;
 use std::fs;
 use std::path::PathBuf;
 use std::thread;
@@ -16,26 +18,51 @@ pub struct Worker {
     interval: u64,
     path_manager: PathManagerRef,
     directories: Vec<PathBuf>,
+    extensions: HashSet<OsString>,
+    recursion_limit: usize,
 }
+
+const RECURSION_LIMIT: usize = 5;
 
 impl Worker {
     fn new(config: ConfigRef, path_manager: PathManagerRef) -> Worker {
+        let interval = config.search_config().interval();
         let directories = config
             .search_config()
             .directories()
             .iter()
             .map(|d| d.into())
             .collect();
+        let extensions = config
+            .search_config()
+            .extensions()
+            .iter()
+            .map(|d| d.into())
+            .collect();
+        let recursion_limit = config
+            .search_config()
+            .recursion_limit()
+            .unwrap_or(RECURSION_LIMIT);
 
         Worker {
-            interval: config.search_config().interval(),
+            interval,
             path_manager,
             directories,
+            extensions,
+            recursion_limit,
         }
     }
 
     fn start(self) {
         if self.directories.is_empty() {
+            info!("No directories to scan, path scanner stopped");
+
+            return;
+        }
+
+        if self.extensions.is_empty() {
+            info!("No extensions to scan, path scanner stopped");
+
             return;
         }
 
@@ -47,7 +74,9 @@ impl Worker {
             for directory in &self.directories {
                 debug!("Scanning {}", directory.display());
 
-                self.scan_directory(directory, 5);
+                if let Err(err) = self.scan_directory(directory, self.recursion_limit) {
+                    warn!("Directory scan error - {}", err);
+                }
             }
 
             debug!("Scan complete");
@@ -56,41 +85,34 @@ impl Worker {
         }
     }
 
-    fn scan_directory(&self, path: &PathBuf, recursion_limit: usize) {
+    fn scan_directory(&self, path: &PathBuf, recursion_limit: usize) -> WorkerResult<()> {
         if recursion_limit == 0 {
-            return;
+            return Err(WorkerError::recursion_limit_exceed());
         }
 
-        let reader = match fs::read_dir(path) {
-            Ok(reader) => reader,
-            Err(err) => {
-                warn!("Failed to add path - {}", err);
-
-                return;
-            }
-        };
-
-        for entry in reader {
+        for entry in fs::read_dir(path).map_err(WorkerError::io_error)? {
             let path = entry.unwrap().path();
 
             if path.is_dir() {
-                self.scan_directory(&path, recursion_limit - 1);
-            }
-
-            if path.is_file() {
-                match path.extension() {
-                    Some(extension) if extension == "backup" => {
-                        match self.path_manager.add_path(&path) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                warn!("Failed to add path - {}", err);
-                            }
+                if let Err(err) = self.scan_directory(&path, recursion_limit - 1) {
+                    warn!("Directory {} skipped - {}", path.display(), err);
+                }
+            } else if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    if self.extensions.contains(extension) {
+                        if let Err(err) = self
+                            .path_manager
+                            .add_path(&path)
+                            .map_err(WorkerError::add_path_error)
+                        {
+                            warn!("Failed to add path - {}", err);
                         }
                     }
-                    _ => {}
                 }
             }
         }
+
+        Ok(())
     }
 }
 
