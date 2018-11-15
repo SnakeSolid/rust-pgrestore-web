@@ -17,6 +17,7 @@ extern crate structopt;
 extern crate time;
 
 mod config;
+mod error;
 mod handler;
 mod http;
 mod jobmanager;
@@ -25,29 +26,23 @@ mod pathmanager;
 mod server;
 mod worker;
 
+use error::ApplicationError;
+use error::ApplicationResult;
 use options::Options;
 use structopt::StructOpt;
 
-fn main() {
+fn main() -> ApplicationResult {
     env_logger::init();
 
     let options = Options::from_args();
+    let config =
+        config::load(options.config_path()).map_err(ApplicationError::read_config_error)?;
+    let path_manager = pathmanager::create();
+    let http_client = http::create(config.clone()).map_err(ApplicationError::http_client_error)?;
+    let job_manager = jobmanager::create(config.clone());
 
-    match config::load(options.config_path()) {
-        Ok(config) => {
-            let path_manager = pathmanager::create();
+    worker::start_search(config.clone(), path_manager.clone());
+    server::start(&options, config, job_manager, path_manager, http_client);
 
-            worker::start_search(config.clone(), path_manager.clone());
-
-            match http::create(config.clone()) {
-                Ok(http_client) => {
-                    let job_manager = jobmanager::create(config.clone());
-
-                    server::start(&options, config, job_manager, path_manager, http_client);
-                }
-                Err(err) => error!("Failed to read configuration: {}", err),
-            }
-        }
-        Err(err) => error!("Failed to read configuration: {}", err),
-    }
+    Ok(())
 }
