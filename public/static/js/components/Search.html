@@ -9,7 +9,11 @@
   </div>
 
   <div class="ui fluid action input" data-bind="css: { loading: isLoading }">
-    <input type="text" placeholder="Search..." data-bind="value: query">
+    <input type="text" placeholder="Search..." data-bind="
+        value: query,
+        enterkey: findBackups,
+        valueUpdate: 'afterkeydown',
+      ">
     <button class="ui button" data-bind="click: findBackups">Search</button>
   </div>
 

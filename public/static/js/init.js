@@ -18,7 +18,7 @@ requirejs.config({
 });
 
 // Start the main application logic.
-requirejs([ "knockout", "components", "Application" ], function(ko, _components, Application) {
+requirejs([ "knockout", "Application" ], function(ko, Application) {
 	const application = new Application();
 
 	ko.applyBindings(application);
