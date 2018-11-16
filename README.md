@@ -23,33 +23,36 @@ Simple configuration example:
 
 ```yaml
 ---
-max_jobs: 10
-restore_jobs: 8
+max_jobs: 10 # maximal number of jobs to store results
+restore_jobs: 8 # number of jobs for pg_restore command
 
-search_config:
-  interval: 21600
-  recursion_limit: 8
-  directories:
+search_config: # backup search configuration
+  interval: 21600 # scanning interval in seconds
+  recursion_limit: 8 # limit directory level recursion (default 5)
+  directories: # directories to scan (if empty - disable directory scanner)
     - "/mnt/tape1/backups"
     - "/mnt/tape2/backups"
-  extensions:
+  extensions: # backup file extensions (if empty - disable directory scanner)
     - "dump"
     - "backup"
 
-http_config:
-  download_directory: /tmp
+http_config: # HTTP dowloader settings
+  download_directory: /tmp # directory to store temporary downloaded files
+  root_certificates: [] # list root certificates in PEM format, if MITM proxy used
+  accept_invalid_hostnames: false # accept invalid SSL certificates (default: false)
+  accept_invalid_certs: false # accept invalid SSL host names (default: false)
 
-commands:
+commands: # paths to PostgreSQL command line utilities
   createdb_path: /usr/bin/createdb
   dropdb_path: /usr/bin/dropdb
   pgrestore_path: /usr/bin/pg_restore
   psql_path: /usr/bin/psql
 
-destinations:
-  - host: localhost
-    port: 5432
-    role: user_one
-    password: pass_one
+destinations: # list of PostgreSQL servers to restore database
+  - host: localhost # host name
+    port: 5432 # port
+    role: user_one # user name with create database / drop database access
+    password: pass_one # user password
 
   - host: localhost
     port: 5432
