@@ -20,4 +20,9 @@ define([ "knockout" ], function(ko) {
 		viewModel: { require: "components/Status" },
 		template: { require: "text!components/Status.html" }
 	});
+
+	ko.components.register("ko-jobs", {
+		viewModel: { require: "components/Jobs" },
+		template: { require: "text!components/Jobs.html" }
+	});
 });

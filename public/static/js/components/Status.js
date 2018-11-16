@@ -9,7 +9,6 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 	const Status = function(params) {
 		this.jobid = params.jobid;
-		this.currectTimer = null;
 		this.stdoutPosition = 0;
 		this.stderrPosition = 0;
 
@@ -52,20 +51,6 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.jobid.subscribe(this.checkJobid, this);
 	};
 
-	Status.prototype.startTimer = function() {
-		this.stopTimer();
-		this.updateStatus()
-		this.currectTimer = setInterval(this.updateStatus.bind(this), 1000);
-	};
-
-	Status.prototype.stopTimer = function() {
-		if (this.currectTimer != null) {
-			clearInterval(this.currectTimer);
-
-			this.currectTimer = null;
-		}
-	};
-
 	Status.prototype.reset = function() {
 		this.stdoutPosition = 0;
 		this.stderrPosition = 0;
@@ -82,7 +67,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.reset();
 
 		if (newValue !== undefined) {
-			this.startTimer();
+			this.updateStatus();
 		}
 	};
 
@@ -97,38 +82,33 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	}
 
 	Status.prototype.updateStatus = function() {
-		const self = this;
 		const res = reqwest({
 			url: "/api/v1/status",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",
 			data: JSON.stringify({
-				jobid: self.jobid(),
-				stdout_position: self.stdoutPosition,
-				stderr_position: self.stderrPosition,
+				jobid: this.jobid(),
+				stdout_position: this.stdoutPosition,
+				stderr_position: this.stderrPosition,
 			}),
 		}).then(function(resp) {
 			if (resp.success) {
 				const data = resp.result;
 
-				self.stdoutPosition = data.stdout_position;
-				self.stderrPosition = data.stderr_position;
+				this.stdoutPosition = data.stdout_position;
+				this.stderrPosition = data.stderr_position;
 
-				self.stage(data.stage);
-				self.stdout(self.trimValue(self.stdout() + data.stdout, self.stdoutTrimmed));
-				self.stderr(self.trimValue(self.stderr() + data.stderr, self.stderrTrimmed));
-				self.status(data.status);
+				this.stage(data.stage);
+				this.stdout(this.trimValue(this.stdout() + data.stdout, this.stdoutTrimmed));
+				this.stderr(this.trimValue(this.stderr() + data.stderr, this.stderrTrimmed));
+				this.status(data.status);
 
-				if (data.status === STATUS_SUCCESS || data.status === STATUS_FAILED) {
-					self.stopTimer();
+				if (data.status === STATUS_INPROGRESS) {
+					setTimeout(this.updateStatus.bind(this), 1000);
 				}
-			} else {
-				self.stopTimer();
 			}
-		}).fail(function(err, msg) {
-			self.stopTimer();
-		});
+		}.bind(this));
 	};
 
 	return Status;

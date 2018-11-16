@@ -11,7 +11,7 @@
 
   <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
 
-  <div class="ui existing segment" >
+  <div class="ui existing segment" style="overflow-x: scroll;">
     <pre data-bind="visible: isStdoutTrimmed">...</pre>
     <pre data-bind="text: stdout, visible: hasStdout"></pre>
     <pre data-bind="visible: isStderrTrimmed">...</pre>

@@ -1,5 +1,6 @@
 use config::ConfigRef;
 use handler::DestinationHandler;
+use handler::JobsHandler;
 use handler::RestoreHandler;
 use handler::SearchHandler;
 use handler::StatusHandler;
@@ -30,6 +31,10 @@ pub fn start(
     mount.mount(
         "/api/v1/status",
         StatusHandler::new(config.clone(), job_manager.clone()),
+    );
+    mount.mount(
+        "/api/v1/jobs",
+        JobsHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
         "/api/v1/search",

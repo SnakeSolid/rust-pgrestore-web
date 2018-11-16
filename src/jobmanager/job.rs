@@ -1,5 +1,8 @@
-#[derive(Debug, Default)]
+use time;
+
+#[derive(Debug)]
 pub struct Job {
+    created: i64,
     status: JobStatus,
     stage: Option<String>,
     stdout: Vec<u8>,
@@ -7,6 +10,18 @@ pub struct Job {
 }
 
 impl Job {
+    pub fn new() -> Job {
+        let created = time::get_time().sec;
+
+        Job {
+            created,
+            status: JobStatus::Pending,
+            stage: None,
+            stdout: Vec::new(),
+            stderr: Vec::new(),
+        }
+    }
+
     pub fn set_status(&mut self, status: JobStatus) {
         self.status = status;
     }
@@ -21,6 +36,10 @@ impl Job {
 
     pub fn extend_stderr(&mut self, buffer: &[u8]) {
         self.stderr.extend(buffer);
+    }
+
+    pub fn created(&self) -> i64 {
+        self.created
     }
 
     pub fn status(&self) -> &JobStatus {
@@ -54,11 +73,5 @@ impl JobStatus {
 
     pub fn complete(success: bool) -> JobStatus {
         JobStatus::Complete { success }
-    }
-}
-
-impl Default for JobStatus {
-    fn default() -> Self {
-        JobStatus::Pending
     }
 }

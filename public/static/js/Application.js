@@ -32,7 +32,7 @@ define([ "knockout", "components", "handlers" ], function(ko, _components, _hand
 			this.currentPage(PAGE_RESTORE);
 		}.bind(this);
 
-		this.restoreCallback = function(jobid) {
+		this.showJStatusCallback = function(jobid) {
 			this.currentJobid(jobid);
 			this.currentPage(PAGE_STATUS);
 		}.bind(this);

@@ -31,11 +31,15 @@
       </div>
 
       <div data-bind="visible: isRestoreVisible">
-        <ko-restore params="backup: backupSearchResult, restoreCallback: restoreCallback"></ko-restore>
+        <ko-restore params="backup: backupSearchResult, restoreCallback: showJStatusCallback"></ko-restore>
       </div>
 
       <div data-bind="visible: isStatusVisible">
         <ko-status params="jobid: currentJobid"></ko-status>
+      </div>
+
+      <div data-bind="visible: isJobsVisible">
+        <ko-jobs params="callback: showJStatusCallback"></ko-jobs>
       </div>
     </div>
 

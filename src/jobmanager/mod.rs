@@ -52,6 +52,13 @@ impl JobManagerRef {
         self.with_read(move |jobmanager| Ok(jobmanager.map_job(jobid, callback)))
     }
 
+    pub fn for_each<F>(&self, callback: F) -> JobManagerResult<()>
+    where
+        F: FnMut(usize, &Job),
+    {
+        self.with_read(move |jobmanager| Ok(jobmanager.for_each(callback)))
+    }
+
     pub fn next_jobid(&self) -> JobManagerResult<usize> {
         self.with_write(move |jobmanager| Ok(jobmanager.next_jobid()))
     }
@@ -99,9 +106,18 @@ impl JobManager {
         }
     }
 
+    pub fn for_each<F>(&self, mut callback: F)
+    where
+        F: FnMut(usize, &Job),
+    {
+        for (&jobid, job) in &self.jobs {
+            callback(jobid, job);
+        }
+    }
+
     fn next_jobid(&mut self) -> usize {
         self.last_jobid += 1;
-        self.jobs.insert(self.last_jobid, Job::default());
+        self.jobs.insert(self.last_jobid, Job::new());
 
         if self.last_jobid > self.max_jobs {
             let last_keep_jobid = self.last_jobid - self.max_jobs;

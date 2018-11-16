@@ -116,11 +116,11 @@
       </div>
     </div>
 
-    <div class="ui buttons">
+    <div class="four ui buttons">
       <button class="ui primary button" data-bind="click: restoreDatabase, css: { disabled: isFormInvalid }">Restore</button>
-      <button class="ui secondary button" data-bind="click: convertSlashes">Convert path slashes</button>
-      <button class="ui secondary button" data-bind="click: schemaFromCode">Schema's from query</button>
-      <button class="ui secondary button" data-bind="click: tablesFromCode">Tables from query</button>
+      <button class="ui grey button" data-bind="click: convertSlashes, css: { disabled: isBackupPathInvalid }">Convert path slashes</button>
+      <button class="ui grey button" data-bind="click: schemaFromCode">Schema's from query</button>
+      <button class="ui grey button" data-bind="click: tablesFromCode">Tables from query</button>
     </div>
   </div>
 
