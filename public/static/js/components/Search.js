@@ -21,30 +21,31 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	};
 
 	Restore.prototype.findBackups = function() {
-		const self = this;
 		const res = reqwest({
 			url: "/api/v1/search",
 			type: "json",
   			method: "POST",
   			contentType: "application/json",
   			data: JSON.stringify({
-				query: self.query(),
+				query: this.query(),
 			}),
 		}).then(function(resp) {
 			if (resp.success) {
-				self.results(resp.result);
-				self.isError(false);
+				this.isError(false);
+				this.results(resp.result);
 			} else {
-				self.isError(true);
-				self.errorMessage(resp.message);
+				this.isError(true);
+				this.errorMessage(resp.message);
+				this.results([]);
 			}
 
-			self.isLoading(false);
-		}).fail(function(err, msg) {
-			self.isLoading(false);
-			self.isError(true);
-			self.errorMessage(msg);
-		});
+			this.isLoading(false);
+		}.bind(this)).fail(function(err, msg) {
+			this.isLoading(false);
+			this.isError(true);
+			this.errorMessage(msg);
+			this.results([]);
+		}.bind(this));
 
 		this.isLoading(true);
 	};
