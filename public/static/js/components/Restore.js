@@ -63,6 +63,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			return this.restore() === RESTORE_TABLES;
 		}, this);
 
+		this.isFormInvalid = ko.pureComputed(function() {
+			return this.isDestinationInvalid() || this.isBackupPathInvalid() || this.isDatabaseNameInvalid();
+		}, this);
+
 		this.schemaCallback = function(text) {
 			this.restore(RESTORE_SCHEMA);
 			this.schemas(this.parseSchema(text.toLowerCase()).sort().join(", "));
@@ -109,26 +113,25 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	};
 
 	Restore.prototype.loadDestinations = function() {
-		const self = this;
 		const res = reqwest({
 			url: "/api/v1/destination",
 			type: "json",
   			method: "POST",
 		}).then(function(resp) {
 			if (resp.success) {
-				self.availableDestinations(resp.result);
-				self.isError(false);
+				this.availableDestinations(resp.result);
+				this.isError(false);
 			} else {
-				self.isError(true);
-				self.errorMessage(resp.message);
+				this.isError(true);
+				this.errorMessage(resp.message);
 			}
 
-			self.isLoading(false);
-		}).fail(function(err, msg) {
-			self.isLoading(false);
-			self.isError(true);
-			self.errorMessage(msg);
-		});
+			this.isLoading(false);
+		}.bind(this)).fail(function(err, msg) {
+			this.isLoading(false);
+			this.isError(true);
+			this.errorMessage(msg);
+		}.bind(this));
 
 		this.isLoading(true);
 	};
@@ -164,35 +167,34 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	};
 
 	Restore.prototype.restoreDatabase = function() {
-		const self = this;
 		const res = reqwest({
 			url: "/api/v1/restore",
 		  	type: "json",
   			method: "POST",
   			contentType: "application/json",
   			data: JSON.stringify({
-				destination: self.selectedDestination(),
-				backup: self.backupToCall(),
-				database_name: self.databaseName(),
-				database: self.database(),
-				restore: self.restoreToCall(),
-				ignore_errors: self.ignoreErrors(),
+				destination: this.selectedDestination(),
+				backup: this.backupToCall(),
+				database_name: this.databaseName(),
+				database: this.database(),
+				restore: this.restoreToCall(),
+				ignore_errors: this.ignoreErrors(),
 			}),
 		}).then(function(resp) {
 			if (resp.success) {
-				self.restoreCallback(resp.result);
-				self.isError(false);
+				this.restoreCallback(resp.result);
+				this.isError(false);
 			} else {
-				self.isError(true);
-				self.errorMessage(resp.message);
+				this.isError(true);
+				this.errorMessage(resp.message);
 			}
 
-			self.isLoading(false);
-		}).fail(function(err, msg) {
-			self.isLoading(false);
-			self.isError(true);
-			self.errorMessage(msg);
-		});
+			this.isLoading(false);
+		}.bind(this)).fail(function(err, msg) {
+			this.isLoading(false);
+			this.isError(true);
+			this.errorMessage(msg);
+		}).bind(this);
 
 		this.isLoading(true);
 	};
