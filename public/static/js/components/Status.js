@@ -19,6 +19,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.stderrTrimmed = ko.observable(false);
 		this.status = ko.observable(STATUS_INPROGRESS);
 
+		this.isJobDefined = ko.pureComputed(function() {
+			return this.jobid() !== undefined;
+		}, this);
+
+		this.isJobUndefined = ko.pureComputed(function() {
+			return this.jobid() === undefined;
+		}, this);
+
 		this.isInProgress = ko.pureComputed(function() {
 			return this.status() === STATUS_INPROGRESS;
 		}, this);

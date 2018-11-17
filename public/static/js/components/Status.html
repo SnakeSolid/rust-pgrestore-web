@@ -1,4 +1,4 @@
-<div class="ui segment">
+<div class="ui segment" data-bind="visible: isJobDefined">
   <h3 class="ui header">Job #<span data-bind="text: jobid"></span> Status</h3>
 
   <div class="ui positive message" data-bind="visible: isSuccess">
@@ -17,4 +17,8 @@
     <pre data-bind="visible: isStderrTrimmed">...</pre>
     <pre data-bind="text: stderr, visible: hasStderr"></pre>
   </div>
+</div>
+
+<div class="ui segment" data-bind="visible: isJobUndefined">
+  <h3 class="ui header">Job Not Selected</h3>
 </div>
