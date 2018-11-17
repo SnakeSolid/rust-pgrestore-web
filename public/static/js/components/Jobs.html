@@ -10,18 +10,18 @@
   <table class="ui selectable striped compact padded table" data-bind="visible: hasResults">
     <thead>
       <tr>
-        <th>#</th>
-        <th>Started</th>
-        <th>Stage</th>
-        <th>Status</th>
+        <th class="one wide">#</th>
+        <th class="three wide">Started</th>
+        <th class="six wide">Status</th>
+        <th class="six wide">Stage</th>
       </tr>
     </thead>
     <tbody data-bind="foreach: results">
       <tr data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }">
         <td data-bind="text: jobid"></td>
         <td data-bind="text: started"></td>
-        <td data-bind="text: stage"></td>
         <td data-bind="text: statusString"></td>
+        <td data-bind="text: stage"></td>
       </tr>
     </tbody>
   </table>

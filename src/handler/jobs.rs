@@ -31,9 +31,13 @@ impl Handler for JobsHandler {
 
             self.job_manager
                 .for_each(|jobid, job| {
-                    result.push(JobData::new(jobid, job.created(), job.status()))
-                })
-                .map_err(|_| HandlerError::new("Job manager error"))?;
+                    result.push(JobData::new(
+                        jobid,
+                        job.created(),
+                        job.status(),
+                        job.stage(),
+                    ))
+                }).map_err(|_| HandlerError::new("Job manager error"))?;
 
             Ok(result)
         })
@@ -45,10 +49,11 @@ struct JobData {
     jobid: usize,
     created: i64,
     status: String,
+    stage: Option<String>,
 }
 
 impl JobData {
-    fn new(jobid: usize, created: i64, status: &JobStatus) -> JobData {
+    fn new(jobid: usize, created: i64, status: &JobStatus, stage: Option<&String>) -> JobData {
         let status = match status {
             JobStatus::Pending => "Pending",
             JobStatus::InProgress => "InProgress",
@@ -61,6 +66,7 @@ impl JobData {
             jobid,
             created,
             status: status.into(),
+            stage: stage.cloned(),
         }
     }
 }
