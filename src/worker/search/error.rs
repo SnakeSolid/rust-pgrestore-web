@@ -25,7 +25,7 @@ impl WorkerError {
         warn!("IO error - {}", error);
 
         WorkerError::IoError {
-            message: error.description().into(),
+            message: format!("{}", error),
         }
     }
 
@@ -33,7 +33,7 @@ impl WorkerError {
         warn!("Path manager error - {}", error);
 
         WorkerError::PathManagerError {
-            message: error.description().into(),
+            message: format!("{}", error),
         }
     }
 }

@@ -37,6 +37,9 @@ fn main() -> ApplicationResult {
     let options = Options::from_args();
     let config =
         config::load(options.config_path()).map_err(ApplicationError::read_config_error)?;
+
+    config::validate(config.clone()).map_err(ApplicationError::config_error)?;
+
     let path_manager = pathmanager::create();
     let http_client = http::create(config.clone()).map_err(ApplicationError::http_client_error)?;
     let job_manager = jobmanager::create(config.clone());

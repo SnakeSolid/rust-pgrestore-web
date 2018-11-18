@@ -1,10 +1,11 @@
-use serde_yaml::Error as YamlError;
-use std::error::Error;
-use std::fmt::Display;
-use std::fmt::Formatter;
-use std::fmt::Result as FmtResult;
+mod error;
+mod validate;
+
+pub use self::error::ConfigError;
+pub use self::error::ConfigResult;
+pub use self::validate::validate;
+
 use std::fs::File;
-use std::io::Error as IoError;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -155,39 +156,6 @@ impl Destination {
 
     pub fn password(&self) -> &str {
         &self.password
-    }
-}
-
-pub type ConfigResult<T> = Result<T, ConfigError>;
-
-#[derive(Debug)]
-pub struct ConfigError {
-    message: String,
-}
-
-impl ConfigError {
-    pub fn io_error(error: IoError) -> ConfigError {
-        warn!("IO error - {}", error);
-
-        ConfigError {
-            message: format!("{}", error),
-        }
-    }
-
-    pub fn yaml_error(error: YamlError) -> ConfigError {
-        warn!("YAML error - {}", error);
-
-        ConfigError {
-            message: format!("{}", error),
-        }
-    }
-}
-
-impl Error for ConfigError {}
-
-impl Display for ConfigError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "{}", self.message)
     }
 }
 
