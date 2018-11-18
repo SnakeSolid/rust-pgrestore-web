@@ -78,11 +78,11 @@ fn read_file(path: &Path, position: u64) -> HandlerResult<(String, u64)> {
     if !path.exists() {
         info!("Job log {} does not exists", path.display());
 
-        return Err(HandlerError::new("Job log does not exists"));
+        return Ok(("".into(), 0));
     }
 
     if !path.is_file() {
-        info!("Job log {} is not a file", path.display());
+        warn!("Job log {} is not a file", path.display());
 
         return Err(HandlerError::new("Job log is not a file"));
     }
