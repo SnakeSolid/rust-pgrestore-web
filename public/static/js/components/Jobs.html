@@ -12,14 +12,16 @@
       <tr>
         <th class="one wide">#</th>
         <th class="three wide">Started</th>
-        <th class="six wide">Status</th>
-        <th class="six wide">Stage</th>
+        <th class="three wide">Updated</th>
+        <th class="four wide">Status</th>
+        <th class="five wide">Stage</th>
       </tr>
     </thead>
     <tbody data-bind="foreach: results">
-      <tr data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }">
+      <tr data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }" style="cursor: pointer;">
         <td data-bind="text: jobid"></td>
         <td data-bind="text: started"></td>
+        <td data-bind="text: updated"></td>
         <td data-bind="text: statusString"></td>
         <td data-bind="text: stage"></td>
       </tr>

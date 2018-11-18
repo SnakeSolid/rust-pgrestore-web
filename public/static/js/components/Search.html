@@ -19,7 +19,7 @@
 
   <table class="ui selectable compact table" data-bind="visible: hasReults">
     <tbody data-bind="foreach: results">
-      <tr data-bind="click: $component.selectResult">
+      <tr data-bind="click: $component.selectResult" style="cursor: pointer;">
         <td><a href="#" data-bind="text: $data"></a></td>
       </tr>
     </tbody>
