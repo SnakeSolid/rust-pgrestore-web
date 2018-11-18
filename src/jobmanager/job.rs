@@ -1,45 +1,48 @@
+use std::path::Path;
+use std::path::PathBuf;
 use time;
 
 #[derive(Debug)]
 pub struct Job {
     created: i64,
+    modified: i64,
     status: JobStatus,
     stage: Option<String>,
-    stdout: Vec<u8>,
-    stderr: Vec<u8>,
+    stdout_path: PathBuf,
+    stderr_path: PathBuf,
 }
 
 impl Job {
-    pub fn new() -> Job {
+    pub fn new(stdout_path: &Path, stderr_path: &Path) -> Job {
         let created = time::get_time().sec;
+        let modified = created;
 
         Job {
             created,
+            modified,
             status: JobStatus::Pending,
             stage: None,
-            stdout: Vec::new(),
-            stderr: Vec::new(),
+            stdout_path: stdout_path.into(),
+            stderr_path: stderr_path.into(),
         }
     }
 
     pub fn set_status(&mut self, status: JobStatus) {
+        self.modified = time::get_time().sec;
         self.status = status;
     }
 
     pub fn set_stage(&mut self, stage: &str) {
+        self.modified = time::get_time().sec;
         self.stage = Some(stage.into());
-    }
-
-    pub fn extend_stdout(&mut self, buffer: &[u8]) {
-        self.stdout.extend(buffer);
-    }
-
-    pub fn extend_stderr(&mut self, buffer: &[u8]) {
-        self.stderr.extend(buffer);
     }
 
     pub fn created(&self) -> i64 {
         self.created
+    }
+
+    pub fn modified(&self) -> i64 {
+        self.modified
     }
 
     pub fn status(&self) -> &JobStatus {
@@ -50,12 +53,12 @@ impl Job {
         self.stage.as_ref()
     }
 
-    pub fn stdout(&self) -> &[u8] {
-        &self.stdout
+    pub fn stdout_path(&self) -> &Path {
+        &self.stdout_path
     }
 
-    pub fn stderr(&self) -> &[u8] {
-        &self.stderr
+    pub fn stderr_path(&self) -> &Path {
+        &self.stderr_path
     }
 }
 

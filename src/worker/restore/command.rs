@@ -1,9 +1,11 @@
 use super::error::WorkerError;
 use super::error::WorkerResult;
 
+use jobmanager::Job;
 use jobmanager::JobManagerRef;
-use std::io::Read;
+use std::fs::OpenOptions;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 use std::process::Stdio;
 
@@ -17,54 +19,29 @@ impl<'a> WorkerCommand<'a> {
         WorkerCommand { jobid, settings }
     }
 
-    fn read_stdout(&self, reader: &mut Read) -> WorkerResult<()> {
-        let mut buffer = [0; 8192];
-
-        loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => return Ok(()),
-                Ok(n) => self
-                    .settings
-                    .job_manager()
-                    .extend_stdout(self.jobid, &buffer[..n])
-                    .map_err(WorkerError::extend_stdout_error)?,
-                Err(err) => return Err(WorkerError::io_error(err)),
-            }
-        }
-    }
-
-    fn read_stderr(&self, reader: &mut Read) -> WorkerResult<()> {
-        let mut buffer = [0; 8192];
-
-        loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => return Ok(()),
-                Ok(n) => self
-                    .settings
-                    .job_manager()
-                    .extend_stderr(self.jobid, &buffer[..n])
-                    .map_err(WorkerError::extend_stderr_error)?,
-                Err(err) => return Err(WorkerError::io_error(err)),
-            }
-        }
-    }
-
     fn wait_command(&self, mut command: Command) -> WorkerResult<()> {
+        let (stdout_path, stderr_path) = self
+            .settings
+            .job_manager()
+            .map_job(self.jobid, to_job_paths)
+            .map_err(WorkerError::map_job_error)?
+            .ok_or_else(|| WorkerError::new("Job not found"))?;
+        let stdout = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(stdout_path)
+            .map_err(WorkerError::io_error)?;
+        let stderr = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(stderr_path)
+            .map_err(WorkerError::io_error)?;
         let mut child = command
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
+            .stdout(Stdio::from(stdout))
+            .stderr(Stdio::from(stderr))
             .spawn()
             .map_err(WorkerError::spawn_command_error)?;
-
-        if let Some(ref mut stdout) = child.stdout {
-            self.read_stdout(stdout)?;
-        }
-
-        if let Some(ref mut stderr) = child.stderr {
-            self.read_stderr(stderr)?;
-        }
-
         let status = child.wait().map_err(WorkerError::wait_command_error)?;
 
         if status.success() {
@@ -339,6 +316,13 @@ impl<'a> WorkerCommand<'a> {
 
         self.wait_command(command)
     }
+}
+
+fn to_job_paths(job: &Job) -> (PathBuf, PathBuf) {
+    let stdout_path = job.stdout_path().into();
+    let stderr_path = job.stderr_path().into();
+
+    (stdout_path, stderr_path)
 }
 
 pub trait WorkerSettings {

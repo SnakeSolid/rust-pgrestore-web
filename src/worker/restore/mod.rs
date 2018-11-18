@@ -14,7 +14,10 @@ use http::HttpClientResult;
 use http::PathHandle;
 use jobmanager::JobManagerRef;
 use std::collections::HashSet;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 use std::thread::Builder;
 
 #[derive(Debug)]
@@ -266,9 +269,20 @@ impl Worker {
         match callback() {
             Ok(path) => Ok(path),
             Err(err) => {
-                self.job_manager()
-                    .extend_stderr(jobid, format!("{}", err).as_bytes())
-                    .map_err(WorkerError::extend_stdout_error)?;
+                let stderr_path: PathBuf = self
+                    .job_manager
+                    .map_job(jobid, |job| job.stderr_path().into())
+                    .map_err(WorkerError::map_job_error)?
+                    .ok_or_else(|| WorkerError::new("Job not found"))?;
+                let mut stdout = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(stderr_path)
+                    .map_err(WorkerError::io_error)?;
+
+                stdout
+                    .write_fmt(format_args!("{}", err))
+                    .map_err(WorkerError::io_error)?;
                 self.set_complete(jobid, false)?;
 
                 Err(WorkerError::download_error(err))

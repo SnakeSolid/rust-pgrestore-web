@@ -8,6 +8,9 @@ pub use self::job::JobStatus;
 
 use config::ConfigRef;
 use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -70,19 +73,12 @@ impl JobManagerRef {
     pub fn set_complete(&self, jobid: usize, success: bool) -> JobManagerResult<()> {
         self.with_write(move |jobmanager| Ok(jobmanager.set_complete(jobid, success)))
     }
-
-    pub fn extend_stdout(&self, jobid: usize, buffer: &[u8]) -> JobManagerResult<()> {
-        self.with_write(move |jobmanager| Ok(jobmanager.extend_stdout(jobid, buffer)))
-    }
-
-    pub fn extend_stderr(&self, jobid: usize, buffer: &[u8]) -> JobManagerResult<()> {
-        self.with_write(move |jobmanager| Ok(jobmanager.extend_stderr(jobid, buffer)))
-    }
 }
 
 #[derive(Debug)]
 struct JobManager {
     max_jobs: usize,
+    joblogs_path: PathBuf,
     last_jobid: usize,
     jobs: HashMap<usize, Job>,
 }
@@ -91,6 +87,7 @@ impl JobManager {
     fn new(config: ConfigRef) -> JobManager {
         JobManager {
             max_jobs: config.max_jobs(),
+            joblogs_path: config.joblogs_path().into(),
             last_jobid: 0,
             jobs: HashMap::new(),
         }
@@ -117,10 +114,18 @@ impl JobManager {
 
     fn next_jobid(&mut self) -> usize {
         self.last_jobid += 1;
-        self.jobs.insert(self.last_jobid, Job::new());
+
+        let (stdout_path, stderr_path) = prepare_job_logs(&self.joblogs_path, self.last_jobid);
+
+        self.jobs
+            .insert(self.last_jobid, Job::new(&stdout_path, &stderr_path));
 
         if self.last_jobid > self.max_jobs {
             let last_keep_jobid = self.last_jobid - self.max_jobs;
+
+            for (&id, _) in self.jobs.iter().filter(|(&id, _)| id <= last_keep_jobid) {
+                prepare_job_logs(&self.joblogs_path, id);
+            }
 
             self.jobs.retain(|&id, _| id > last_keep_jobid);
         }
@@ -150,26 +155,32 @@ impl JobManager {
             None => {}
         }
     }
+}
 
-    fn extend_stdout(&mut self, jobid: usize, buffer: &[u8]) {
-        match self.jobs.get_mut(&jobid) {
-            Some(job) => {
-                debug!("Extend job {} STDOUT with {} bytes", jobid, buffer.len());
+fn prepare_job_logs(joblogs_path: &Path, jobid: usize) -> (PathBuf, PathBuf) {
+    let stdout_path = joblogs_path.join(format!("job-{}-stdout.log", jobid));
+    let stderr_path = joblogs_path.join(format!("job-{}-stderr.log", jobid));
 
-                job.extend_stdout(buffer);
+    remove_job_output(&stdout_path);
+    remove_job_output(&stderr_path);
+
+    (stdout_path, stderr_path)
+}
+
+fn remove_job_output(path: &Path) {
+    if path.exists() {
+        debug!("Removing job output {}", path.display());
+
+        if path.is_file() {
+            if let Err(err) = fs::remove_file(&path) {
+                warn!(
+                    "Failed to remove job output path {} - {}",
+                    path.display(),
+                    err
+                )
             }
-            None => {}
-        }
-    }
-
-    fn extend_stderr(&mut self, jobid: usize, buffer: &[u8]) {
-        match self.jobs.get_mut(&jobid) {
-            Some(job) => {
-                debug!("Extend job {} STDERR with {} bytes", jobid, buffer.len());
-
-                job.extend_stderr(buffer);
-            }
-            None => {}
+        } else {
+            warn!("Job output path {} is not a file", path.display(),)
         }
     }
 }

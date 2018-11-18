@@ -50,14 +50,8 @@ impl WorkerError {
         WorkerError::new(&format!("{}", error))
     }
 
-    pub fn extend_stdout_error(error: JobManagerError) -> Self {
-        warn!("Job manager extend STDOUT error - {}", error);
-
-        WorkerError::new(&format!("{}", error))
-    }
-
-    pub fn extend_stderr_error(error: JobManagerError) -> Self {
-        warn!("Job manager extend STDERR error - {}", error);
+    pub fn map_job_error(error: JobManagerError) -> Self {
+        warn!("Job manager map job error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }

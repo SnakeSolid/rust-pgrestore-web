@@ -1,5 +1,6 @@
 use super::util::handle_request;
 use super::HandlerError;
+use super::HandlerResult;
 
 use config::ConfigRef;
 use iron::middleware::Handler;
@@ -9,7 +10,12 @@ use iron::Response as IronResponse;
 use jobmanager::Job;
 use jobmanager::JobManagerRef;
 use jobmanager::JobStatus;
-use std::borrow::Cow;
+use std::fs::File;
+use std::io::Read;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct StatusHandler {
@@ -29,32 +35,90 @@ impl StatusHandler {
 impl Handler for StatusHandler {
     fn handle(&self, request: &mut IronRequest) -> IronResult<IronResponse> {
         handle_request(request, move |request: Request| {
+            let jobid = request.jobid;
+            let (stage, stdout_path, stderr_path, status) = self
+                .job_manager
+                .map_job(jobid, job_params)
+                .map_err(|_| HandlerError::new("Job manager error"))?
+                .ok_or_else(|| HandlerError::new("Job not found"))?;
             let stdout_position = request.stdout_position.unwrap_or(0);
             let stderr_position = request.stderr_position.unwrap_or(0);
+            let (stdout, stdout_position) = read_file(&stdout_path, stdout_position)?;
+            let (stderr, stderr_position) = read_file(&stderr_path, stderr_position)?;
 
-            self.job_manager
-                .map_job(request.jobid, |job| {
-                    Responce::from_job(job, stdout_position, stderr_position)
-                }).map_err(|_| HandlerError::new("Job manager error"))?
-                .ok_or_else(|| HandlerError::new("Job not found"))
+            Ok(Responce {
+                stage,
+                stdout,
+                stdout_position,
+                stderr,
+                stderr_position,
+                status,
+            })
         })
     }
+}
+
+fn job_params(job: &Job) -> (String, PathBuf, PathBuf, Status) {
+    let stage = job
+        .stage()
+        .cloned()
+        .unwrap_or_else(|| String::with_capacity(0));
+    let stdout_path = job.stdout_path().into();
+    let stderr_path = job.stderr_path().into();
+    let status = match job.status() {
+        JobStatus::Complete { success: true } => Status::Success,
+        JobStatus::Complete { success: false } => Status::Failed,
+        _ => Status::InProgress,
+    };
+
+    (stage, stdout_path, stderr_path, status)
+}
+
+fn read_file(path: &Path, position: u64) -> HandlerResult<(String, u64)> {
+    if !path.exists() {
+        info!("Job log {} does not exists", path.display());
+
+        return Err(HandlerError::new("Job log does not exists"));
+    }
+
+    if !path.is_file() {
+        info!("Job log {} is not a file", path.display());
+
+        return Err(HandlerError::new("Job log is not a file"));
+    }
+
+    let mut file = File::open(path).unwrap();
+    let metadata = file
+        .metadata()
+        .map_err(|_| HandlerError::new("Failed to read job metadata"))?;
+    let file_size = metadata.len();
+    let start_position = position.min(file_size);
+
+    file.seek(SeekFrom::Start(start_position))
+        .map_err(|_| HandlerError::new("Failed to seek job log"))?;
+
+    let mut result = String::with_capacity(file_size as usize - start_position as usize);
+    let n = file
+        .read_to_string(&mut result)
+        .map_err(|_| HandlerError::new("Failed to read job log"))?;
+
+    Ok((result, start_position + n as u64))
 }
 
 #[derive(Debug, Deserialize)]
 struct Request {
     jobid: usize,
-    stdout_position: Option<usize>,
-    stderr_position: Option<usize>,
+    stdout_position: Option<u64>,
+    stderr_position: Option<u64>,
 }
 
 #[derive(Debug, Serialize)]
 struct Responce {
     stage: String,
     stdout: String,
-    stdout_position: usize,
+    stdout_position: u64,
     stderr: String,
-    stderr_position: usize,
+    stderr_position: u64,
     status: Status,
 }
 
@@ -63,35 +127,4 @@ enum Status {
     InProgress,
     Success,
     Failed,
-}
-
-impl Responce {
-    fn from_job(job: &Job, stdout_position: usize, stderr_position: usize) -> Responce {
-        let stage = job
-            .stage()
-            .cloned()
-            .unwrap_or_else(|| String::with_capacity(0));
-        let stdout = slice_to_string(job.stdout(), stdout_position);
-        let stderr = slice_to_string(job.stderr(), stderr_position);
-        let status = match job.status() {
-            JobStatus::Complete { success: true } => Status::Success,
-            JobStatus::Complete { success: false } => Status::Failed,
-            _ => Status::InProgress,
-        };
-
-        Responce {
-            stage,
-            stdout: stdout.into_owned(),
-            stdout_position: job.stdout().len(),
-            stderr: stderr.into_owned(),
-            stderr_position: job.stderr().len(),
-            status,
-        }
-    }
-}
-
-fn slice_to_string<'a>(buffer: &'a [u8], position: usize) -> Cow<'a, str> {
-    let start = position.min(buffer.len());
-
-    String::from_utf8_lossy(&buffer[start..])
 }

@@ -13,6 +13,7 @@ pub type ConfigRef = Arc<Config>;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     max_jobs: usize,
+    joblogs_path: String,
     restore_jobs: usize,
     search_config: SearchConfig,
     http_config: HttpConfig,
@@ -23,6 +24,10 @@ pub struct Config {
 impl Config {
     pub fn max_jobs(&self) -> usize {
         self.max_jobs
+    }
+
+    pub fn joblogs_path(&self) -> &str {
+        &self.joblogs_path
     }
 
     pub fn restore_jobs(&self) -> usize {

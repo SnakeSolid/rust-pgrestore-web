@@ -34,6 +34,7 @@ impl Handler for JobsHandler {
                     result.push(JobData::new(
                         jobid,
                         job.created(),
+                        job.modified(),
                         job.status(),
                         job.stage(),
                     ))
@@ -48,12 +49,19 @@ impl Handler for JobsHandler {
 struct JobData {
     jobid: usize,
     created: i64,
+    modified: i64,
     status: String,
     stage: Option<String>,
 }
 
 impl JobData {
-    fn new(jobid: usize, created: i64, status: &JobStatus, stage: Option<&String>) -> JobData {
+    fn new(
+        jobid: usize,
+        created: i64,
+        modified: i64,
+        status: &JobStatus,
+        stage: Option<&String>,
+    ) -> JobData {
         let status = match status {
             JobStatus::Pending => "Pending",
             JobStatus::InProgress => "InProgress",
@@ -65,6 +73,7 @@ impl JobData {
         JobData {
             jobid,
             created,
+            modified,
             status: status.into(),
             stage: stage.cloned(),
         }

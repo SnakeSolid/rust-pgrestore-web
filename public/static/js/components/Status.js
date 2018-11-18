@@ -9,6 +9,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 	const Status = function(params) {
 		this.jobid = params.jobid;
+		this.timerId = undefined;
 		this.stdoutPosition = 0;
 		this.stderrPosition = 0;
 
@@ -75,6 +76,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.reset();
 
 		if (newValue !== undefined) {
+			if (this.timerId !== undefined) {
+				clearTimeout(this.timerId);
+			}
+
 			this.updateStatus();
 		}
 	};
@@ -113,9 +118,13 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 				this.status(data.status);
 
 				if (data.status === STATUS_INPROGRESS) {
-					setTimeout(this.updateStatus.bind(this), 1000);
+					this.timerId = setTimeout(this.updateStatus.bind(this), 1000);
+				} else {
+					this.timerId = undefined;
 				}
 			}
+		}.bind(this)).fail(function(err, msg) {
+			this.timerId = undefined;
 		}.bind(this));
 	};
 
