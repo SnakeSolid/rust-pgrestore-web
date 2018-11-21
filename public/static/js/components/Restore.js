@@ -12,6 +12,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 	const EXTRACT_TABLES_RES = [ /from\s+(\w+\.\w+)\b/gi, /join\s+(\w+\.\w+)\b/gi ];
 
+	const nonEmptyString = function(value) {
+		return value.length > 0;
+	};
+
 	const Restore = function(params) {
 		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
@@ -157,10 +161,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			result.type = RESTORE_FULL;
 		} else if (this.isRestoreSchemas()) {
 			result.type = RESTORE_SCHEMA;
-			result.schema = this.schemas().split(/[\s,]+/);
+			result.schema = this.schemas().split(/[\s,]+/).filter(nonEmptyString);
 		} else if (this.isRestoreTables()) {
 			result.type = RESTORE_TABLES;
-			result.tables = this.tables().split(/[\s,]+/);
+			result.tables = this.tables().split(/[\s,]+/).filter(nonEmptyString);
 		}
 
 		return result;
