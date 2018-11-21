@@ -99,14 +99,14 @@
       </div>
     </div>
 
-    <div class="field" data-bind="visible: isRestoreSchemas">
+    <div class="field" data-bind="visible: isRestoreSchemas, css: { error: isRestoreSchemasInvalid }">
       <label>Schema names:</label>
-      <input type="text" data-bind="value: schemas" placeholder="schema names">
+      <input type="text" data-bind="textInput: schemas" placeholder="schema names">
     </div>
 
-    <div class="field" data-bind="visible: isRestoreTables">
+    <div class="field" data-bind="visible: isRestoreTables, css: { error: isRestoreTablesInvalid }">
       <label>Full table names (with schema part):</label>
-      <textarea rows="2" data-bind="value: tables"></textarea>
+      <textarea rows="2" data-bind="textInput: tables"></textarea>
     </div>
 
     <div class="inline field">

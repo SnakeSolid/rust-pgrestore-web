@@ -10,7 +10,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	const RESTORE_SCHEMA = "Schema";
 	const RESTORE_TABLES = "Tables";
 
-	const EXTRACT_TABLES_RES = [ /from\s+(\w+\.\w+)\b/gi, /join\s+(\w+\.\w+)\b/gi ];
+	const EXTRACT_TABLES_RES = [
+			/insert\s+into\s+(\w+\.\w+)\b/gi,
+			/update\s+(\w+\.\w+)\b/gi,
+			/from\s+(\w+\.\w+)\b/gi,
+			/join\s+(\w+\.\w+)\b/gi,
+		];
+	const SEPARATORS_RE = /[\s,]+/;
+	const WORDS_RE = /\w+/;
 
 	const nonEmptyString = function(value) {
 		return value.length > 0;
@@ -55,6 +62,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			return this.databaseName().length === 0;
 		}, this);
 
+		this.isRestoreSchemasInvalid = ko.pureComputed(function() {
+			return this.isRestoreSchemas() && !WORDS_RE.test(this.schemas());
+		}, this);
+
+		this.isRestoreTablesInvalid = ko.pureComputed(function() {
+			return this.isRestoreTables() && !WORDS_RE.test(this.tables());
+		}, this);
+
 		this.isRestoreFull = ko.pureComputed(function() {
 			return this.restore() === RESTORE_FULL;
 		}, this);
@@ -68,7 +83,11 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		}, this);
 
 		this.isFormInvalid = ko.pureComputed(function() {
-			return this.isDestinationInvalid() || this.isBackupPathInvalid() || this.isDatabaseNameInvalid();
+			return this.isDestinationInvalid()
+				|| this.isBackupPathInvalid()
+				|| this.isDatabaseNameInvalid()
+				|| this.isRestoreSchemasInvalid()
+				|| this.isRestoreTablesInvalid();
 		}, this);
 
 		this.schemaCallback = function(text) {
@@ -161,10 +180,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			result.type = RESTORE_FULL;
 		} else if (this.isRestoreSchemas()) {
 			result.type = RESTORE_SCHEMA;
-			result.schema = this.schemas().split(/[\s,]+/).filter(nonEmptyString);
+			result.schema = this.schemas().split(SEPARATORS_RE).filter(nonEmptyString);
 		} else if (this.isRestoreTables()) {
 			result.type = RESTORE_TABLES;
-			result.tables = this.tables().split(/[\s,]+/).filter(nonEmptyString);
+			result.tables = this.tables().split(SEPARATORS_RE).filter(nonEmptyString);
 		}
 
 		return result;
@@ -231,7 +250,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 			if (result !== null) {
 				result.map(function(item) {
-					return item.substring(5).trim();
+					return re.exec(item)[1];
 				}).forEach(function (item) {
 					tables.add(item);
 				});
