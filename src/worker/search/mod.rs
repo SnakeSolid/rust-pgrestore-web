@@ -69,7 +69,9 @@ impl Worker {
         loop {
             info!("Start scanning paths");
 
-            let _ = self.path_manager.clear();
+            if let Err(err) = self.path_manager.retain(|path| path.is_file()) {
+                warn!("Failed to retain old paths - {}", err);
+            }
 
             for directory in &self.directories {
                 debug!("Scanning {}", directory.display());
@@ -79,7 +81,7 @@ impl Worker {
                 }
             }
 
-            debug!("Scan complete");
+            info!("Scan complete");
 
             thread::sleep(Duration::from_secs(self.interval));
         }
@@ -87,7 +89,12 @@ impl Worker {
 
     fn scan_directory(&self, path: &PathBuf, recursion_limit: usize) -> WorkerResult<()> {
         if recursion_limit == 0 {
-            return Err(WorkerError::recursion_limit_exceed());
+            info!(
+                "Directory {} skipped - Recursion limit exceed",
+                path.display()
+            );
+
+            return Ok(());
         }
 
         for entry in fs::read_dir(path).map_err(WorkerError::io_error)? {

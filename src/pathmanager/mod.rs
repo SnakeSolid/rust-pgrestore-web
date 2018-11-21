@@ -4,6 +4,7 @@ pub use self::error::PathManagerError;
 pub use self::error::PathManagerResult;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -50,8 +51,11 @@ impl PathManagerRef {
         self.with_read(move |pathmanager| Ok(pathmanager.query_paths(query, n, callback)))
     }
 
-    pub fn clear(&self) -> PathManagerResult<()> {
-        self.with_write(move |pathmanager| Ok(pathmanager.clear()))
+    pub fn retain<F>(&self, callback: F) -> PathManagerResult<()>
+    where
+        F: Fn(&PathBuf) -> bool,
+    {
+        self.with_write(move |pathmanager| Ok(pathmanager.retain(callback)))
     }
 
     pub fn add_path(&self, path: &Path) -> PathManagerResult<()> {
@@ -107,19 +111,40 @@ impl PathManager {
             .for_each(|p| callback(p));
     }
 
-    pub fn clear(&mut self) {
-        self.paths.clear();
-        self.index.clear();
+    pub fn retain<F>(&mut self, callback: F)
+    where
+        F: Fn(&PathBuf) -> bool,
+    {
+        let mut remove_ids = HashSet::new();
+
+        for (id, _) in self.paths.iter().filter(|(_, path)| !callback(path)) {
+            remove_ids.insert(id.clone());
+        }
+
+        for (_, ids) in &mut self.index {
+            ids.retain(|id| !remove_ids.contains(id));
+        }
+
+        self.paths.retain(|id, _| !remove_ids.contains(id));
+        self.index.retain(|_, ids| !ids.is_empty());
     }
 
     pub fn add_path(&mut self, path: &Path) {
         let index = self.next_index;
         let path = path.to_path_buf();
 
-        self.paths.insert(index, path.clone());
-
-        for component in &path {
+        for component in path.iter().skip(1) {
             let name = component.to_string_lossy().to_lowercase();
+
+            if let Some(ids) = self.index.get(&name) {
+                for _ in ids
+                    .iter()
+                    .filter_map(|id| self.paths.get(id))
+                    .filter(|&p| p == &path)
+                {
+                    return;
+                }
+            }
 
             self.index
                 .entry(name)
@@ -127,6 +152,7 @@ impl PathManager {
                 .push(index);
         }
 
+        self.paths.insert(index, path);
         self.next_index += 1;
     }
 }
@@ -210,17 +236,36 @@ mod tests {
     }
 
     #[test]
-    fn clear_shold_remove_all_paths() {
+    fn query_shold_add_path_only_once() {
         let path_1: PathBuf = "/test/dir/file.backup".into();
         let path_2: PathBuf = "/test/other/file.backup".into();
+        let path_3: PathBuf = "/test/other.backup".into();
         let mut manager = PathManager::new();
         let mut result = Vec::new();
 
         manager.add_path(&path_1);
         manager.add_path(&path_2);
-        manager.clear();
+        manager.add_path(&path_2);
+        manager.add_path(&path_3);
         manager.query_paths("file other", 2, |p| result.push(p.to_path_buf()));
 
-        assert_eq!(Vec::<PathBuf>::new(), result);
+        assert_eq!(vec![path_2, path_3], result);
+    }
+
+    #[test]
+    fn clear_shold_retain_path() {
+        let path_1: PathBuf = "/test/dir/file.backup".into();
+        let path_2: PathBuf = "/test/other/file.backup".into();
+        let path_3: PathBuf = "/test/different/file.backup".into();
+        let mut manager = PathManager::new();
+        let mut result = Vec::new();
+
+        manager.add_path(&path_1);
+        manager.add_path(&path_2);
+        manager.add_path(&path_3);
+        manager.retain(|path| path != &path_2);
+        manager.query_paths("diff file", 3, |p| result.push(p.to_path_buf()));
+
+        assert_eq!(vec![path_3, path_1], result);
     }
 }
