@@ -250,9 +250,11 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 
 			if (result !== null) {
 				result.map(function(item) {
-					return re.exec(item)[1];
+					return re.exec(item);
+				}).filter(function(item) {
+					return item !== null;
 				}).forEach(function (item) {
-					tables.add(item);
+					tables.add(item[1]);
 				});
 			}
 		}
