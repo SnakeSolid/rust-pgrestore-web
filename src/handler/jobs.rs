@@ -35,6 +35,7 @@ impl Handler for JobsHandler {
                         jobid,
                         job.created(),
                         job.modified(),
+                        job.database_name(),
                         job.status(),
                         job.stage(),
                     ))
@@ -50,6 +51,7 @@ struct JobData {
     jobid: usize,
     created: i64,
     modified: i64,
+    database_name: String,
     status: String,
     stage: Option<String>,
 }
@@ -59,6 +61,7 @@ impl JobData {
         jobid: usize,
         created: i64,
         modified: i64,
+        database_name: &str,
         status: &JobStatus,
         stage: Option<&String>,
     ) -> JobData {
@@ -74,6 +77,7 @@ impl JobData {
             jobid,
             created,
             modified,
+            database_name: database_name.into(),
             status: status.into(),
             stage: stage.cloned(),
         }

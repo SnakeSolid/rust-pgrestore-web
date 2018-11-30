@@ -61,7 +61,7 @@ impl Handler for RestoreHandler {
             };
             let job_id = self
                 .job_manager
-                .next_jobid()
+                .next_jobid(&request.database_name)
                 .map_err(|_| HandlerError::new("Failed to create job"))?;
             let worker = RestoreWorker::new(
                 self.config.clone(),

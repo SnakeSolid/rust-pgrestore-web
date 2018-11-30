@@ -62,8 +62,8 @@ impl JobManagerRef {
         self.with_read(move |jobmanager| Ok(jobmanager.for_each(callback)))
     }
 
-    pub fn next_jobid(&self) -> JobManagerResult<usize> {
-        self.with_write(move |jobmanager| Ok(jobmanager.next_jobid()))
+    pub fn next_jobid(&self, database_name: &str) -> JobManagerResult<usize> {
+        self.with_write(move |jobmanager| Ok(jobmanager.next_jobid(database_name)))
     }
 
     pub fn set_stage(&self, jobid: usize, stage: &str) -> JobManagerResult<()> {
@@ -112,13 +112,15 @@ impl JobManager {
         }
     }
 
-    fn next_jobid(&mut self) -> usize {
+    fn next_jobid(&mut self, database_name: &str) -> usize {
         self.last_jobid += 1;
 
         let (stdout_path, stderr_path) = prepare_job_logs(&self.joblogs_path, self.last_jobid);
 
-        self.jobs
-            .insert(self.last_jobid, Job::new(&stdout_path, &stderr_path));
+        self.jobs.insert(
+            self.last_jobid,
+            Job::new(database_name, &stdout_path, &stderr_path),
+        );
 
         if self.last_jobid > self.max_jobs {
             let last_keep_jobid = self.last_jobid - self.max_jobs;

@@ -36,7 +36,7 @@ impl Handler for StatusHandler {
     fn handle(&self, request: &mut IronRequest) -> IronResult<IronResponse> {
         handle_request(request, move |request: Request| {
             let jobid = request.jobid;
-            let (stage, stdout_path, stderr_path, status) = self
+            let (database_name, stage, stdout_path, stderr_path, status) = self
                 .job_manager
                 .map_job(jobid, job_params)
                 .map_err(|_| HandlerError::new("Job manager error"))?
@@ -47,6 +47,7 @@ impl Handler for StatusHandler {
             let (stderr, stderr_position) = read_file(&stderr_path, stderr_position)?;
 
             Ok(Responce {
+                database_name,
                 stage,
                 stdout,
                 stdout_position,
@@ -58,7 +59,8 @@ impl Handler for StatusHandler {
     }
 }
 
-fn job_params(job: &Job) -> (String, PathBuf, PathBuf, Status) {
+fn job_params(job: &Job) -> (String, String, PathBuf, PathBuf, Status) {
+    let database_name = job.database_name().into();
     let stage = job
         .stage()
         .cloned()
@@ -71,7 +73,7 @@ fn job_params(job: &Job) -> (String, PathBuf, PathBuf, Status) {
         _ => Status::InProgress,
     };
 
-    (stage, stdout_path, stderr_path, status)
+    (database_name, stage, stdout_path, stderr_path, status)
 }
 
 fn read_file(path: &Path, position: u64) -> HandlerResult<(String, u64)> {
@@ -114,6 +116,7 @@ struct Request {
 
 #[derive(Debug, Serialize)]
 struct Responce {
+    database_name: String,
     stage: String,
     stdout: String,
     stdout_position: u64,

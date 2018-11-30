@@ -7,19 +7,21 @@ pub struct Job {
     created: i64,
     modified: i64,
     status: JobStatus,
+    database_name: String,
     stage: Option<String>,
     stdout_path: PathBuf,
     stderr_path: PathBuf,
 }
 
 impl Job {
-    pub fn new(stdout_path: &Path, stderr_path: &Path) -> Job {
+    pub fn new(database_name: &str, stdout_path: &Path, stderr_path: &Path) -> Job {
         let created = time::get_time().sec;
         let modified = created;
 
         Job {
             created,
             modified,
+            database_name: database_name.into(),
             status: JobStatus::Pending,
             stage: None,
             stdout_path: stdout_path.into(),
@@ -43,6 +45,10 @@ impl Job {
 
     pub fn modified(&self) -> i64 {
         self.modified
+    }
+
+    pub fn database_name(&self) -> &str {
+        &self.database_name
     }
 
     pub fn status(&self) -> &JobStatus {
