@@ -13,8 +13,9 @@
         <th class="one wide">#</th>
         <th class="three wide">Started</th>
         <th class="three wide">Updated</th>
-        <th class="four wide">Status</th>
-        <th class="five wide">Stage</th>
+        <th class="three wide">Database Name</th>
+        <th class="three wide">Status</th>
+        <th class="three wide">Stage</th>
       </tr>
     </thead>
     <tbody data-bind="foreach: results">
@@ -22,6 +23,7 @@
         <td data-bind="text: jobid"></td>
         <td data-bind="text: started"></td>
         <td data-bind="text: updated"></td>
+        <td data-bind="text: databaseName"></td>
         <td data-bind="text: statusString"></td>
         <td data-bind="text: stage"></td>
       </tr>

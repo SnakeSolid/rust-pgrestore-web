@@ -22,6 +22,7 @@ define([ "knockout", "reqwest", "moment" ], function(ko, reqwest, moment) {
 		this.jobid = params.jobid;
 		this.started = moment.unix(params.created).format(DATE_FORMAT);
 		this.updated = moment.unix(params.modified).format(DATE_FORMAT);
+		this.databaseName = params.database_name;
 		this.status = params.status;
 		this.stage = params.stage;
 
