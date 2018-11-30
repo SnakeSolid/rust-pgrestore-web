@@ -13,6 +13,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.stdoutPosition = 0;
 		this.stderrPosition = 0;
 
+		this.databaseName = ko.observable("");
 		this.stage = ko.observable("");
 		this.stdout = ko.observable("");
 		this.stderr = ko.observable("");
@@ -64,6 +65,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.stdoutPosition = 0;
 		this.stderrPosition = 0;
 
+		this.databaseName("");
 		this.stage("");
 		this.stdout("");
 		this.stderr("");
@@ -112,6 +114,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 				this.stdoutPosition = data.stdout_position;
 				this.stderrPosition = data.stderr_position;
 
+				this.databaseName(data.database_name);
 				this.stage(data.stage);
 				this.stdout(this.trimValue(this.stdout() + data.stdout, this.stdoutTrimmed));
 				this.stderr(this.trimValue(this.stderr() + data.stderr, this.stderrTrimmed));
