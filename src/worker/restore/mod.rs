@@ -266,6 +266,10 @@ impl Worker {
     where
         F: FnOnce() -> HttpClientResult<PathHandle>,
     {
+        self.job_manager
+            .set_stage(jobid, "Download file")
+            .map_err(WorkerError::set_stage_error)?;
+
         match callback() {
             Ok(path) => Ok(path),
             Err(err) => {
