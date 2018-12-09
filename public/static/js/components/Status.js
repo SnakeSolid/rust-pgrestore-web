@@ -20,6 +20,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		this.stdoutTrimmed = ko.observable(false);
 		this.stderrTrimmed = ko.observable(false);
 		this.status = ko.observable(STATUS_INPROGRESS);
+		this.truncateOutput = ko.observable(true);
 
 		this.isJobDefined = ko.pureComputed(function() {
 			return this.jobid() !== undefined;
@@ -87,7 +88,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	};
 
 	Status.prototype.trimValue = function(value, flag) {
-		if (value.length > MAX_OUTPUT_LENGTH) {
+		if (this.truncateOutput() && value.length > MAX_OUTPUT_LENGTH) {
 			flag(true);
 
 			return value.substring(value.length - MAX_OUTPUT_LENGTH);

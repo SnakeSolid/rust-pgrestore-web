@@ -12,6 +12,11 @@
   <p>Database name: <span data-bind="text: databaseName">&mdash;</span></p>
   <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
 
+  <div class="ui checkbox">
+    <input id="truncate_output" type="checkbox" data-bind="checked: truncateOutput">
+    <label for="truncate_output">Truncate output</label>
+  </div>
+
   <div class="ui existing segment" style="overflow-x: scroll;">
     <pre data-bind="visible: isStdoutTrimmed">...</pre>
     <pre data-bind="text: stdout, visible: hasStdout"></pre>
