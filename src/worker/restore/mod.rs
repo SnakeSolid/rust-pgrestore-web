@@ -14,6 +14,7 @@ use http::HttpClientResult;
 use http::PathHandle;
 use jobmanager::JobManagerRef;
 use std::collections::HashSet;
+use std::fmt::Arguments;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
@@ -180,6 +181,8 @@ impl Worker {
     ) -> WorkerResult<()> {
         let command = WorkerCommand::new(jobid, &self);
 
+        self.check_backup_path(jobid, &backup_path)?;
+
         if drop_database {
             self.execute_step(jobid, || command.drop_database())?;
         }
@@ -201,6 +204,8 @@ impl Worker {
         create_database: bool,
     ) -> WorkerResult<()> {
         let command = WorkerCommand::new(jobid, &self);
+
+        self.check_backup_path(jobid, &backup_path)?;
 
         if drop_database {
             self.execute_step(jobid, || command.drop_database())?;
@@ -228,6 +233,8 @@ impl Worker {
     ) -> WorkerResult<()> {
         let mut command = WorkerCommand::new(jobid, &self);
 
+        self.check_backup_path(jobid, &backup_path)?;
+
         if drop_database {
             self.execute_step(jobid, || command.drop_database())?;
         }
@@ -248,6 +255,48 @@ impl Worker {
 
         self.set_complete(jobid, true)
     }
+
+    fn write_error(&self, jobid: usize, args: Arguments) -> WorkerResult<()> {
+        let stderr_path: PathBuf = self
+            .job_manager
+            .map_job(jobid, |job| job.stderr_path().into())
+            .map_err(WorkerError::map_job_error)?
+            .ok_or_else(|| WorkerError::new("Job not found"))?;
+        let mut stdout = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(stderr_path)
+            .map_err(WorkerError::io_error)?;
+
+        stdout
+            .write_fmt(format_args!("{}", args))
+            .map_err(WorkerError::io_error)?;
+        self.set_complete(jobid, false)?;
+
+        Ok(())
+    }
+
+    fn check_backup_path(&self, jobid: usize, path: &Path) -> WorkerResult<()> {
+        if !path.exists() {
+            self.write_error(
+                jobid,
+                format_args!("Path {} does not exists", path.display()),
+            )?;
+            self.set_complete(jobid, false)?;
+
+            return Err(WorkerError::new("Path does not exists"));
+        }
+
+        if !path.is_file() {
+            self.write_error(jobid, format_args!("Path {} is not a file", path.display()))?;
+            self.set_complete(jobid, false)?;
+
+            return Err(WorkerError::new("Path is not a file"));
+        }
+
+        Ok(())
+    }
+
     fn execute_step<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
     where
         F: FnOnce() -> WorkerResult<()>,
@@ -273,20 +322,7 @@ impl Worker {
         match callback() {
             Ok(path) => Ok(path),
             Err(err) => {
-                let stderr_path: PathBuf = self
-                    .job_manager
-                    .map_job(jobid, |job| job.stderr_path().into())
-                    .map_err(WorkerError::map_job_error)?
-                    .ok_or_else(|| WorkerError::new("Job not found"))?;
-                let mut stdout = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(stderr_path)
-                    .map_err(WorkerError::io_error)?;
-
-                stdout
-                    .write_fmt(format_args!("{}", err))
-                    .map_err(WorkerError::io_error)?;
+                self.write_error(jobid, format_args!("{}", err))?;
                 self.set_complete(jobid, false)?;
 
                 Err(WorkerError::download_error(err))
