@@ -3,9 +3,7 @@
 
   <button class="fluid ui primary button" data-bind="click: updateJobs, css: { disabled: isLoading }">Refresh</button>
 
-  <div class="ui negative message" data-bind="visible: isError">
-    <p data-bind="text: errorMessage"></p>
-  </div>
+  <div class="ui negative message" data-bind="visible: isError"><p data-bind="text: errorMessage"></p></div>
 
   <table class="ui selectable striped compact padded table" data-bind="visible: hasResults">
     <thead>
@@ -19,7 +17,10 @@
       </tr>
     </thead>
     <tbody data-bind="foreach: results">
-      <tr data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }" style="cursor: pointer;">
+      <tr
+        data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }"
+        style="cursor: pointer;"
+      >
         <td data-bind="text: jobid"></td>
         <td data-bind="text: started"></td>
         <td data-bind="text: updated"></td>

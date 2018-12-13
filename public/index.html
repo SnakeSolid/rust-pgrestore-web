@@ -1,49 +1,59 @@
 <!DOCTYPE html>
 
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>PG Restore Web</title>
+  <head>
+    <meta charset="utf-8" />
+    <title>PG Restore Web</title>
 
-  <link rel="icon" sizes="16x16" type="image/x-icon" href="/static/favicon-x16.png">
-  <link rel="icon" sizes="32x32" type="image/x-icon" href="/static/favicon-x32.png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.css" integrity="sha256-ncjDAd2/rm/vaNTqp7Kk96MfSeHACtbiDU9NWKqNuCI=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/modal.min.css" integrity="sha256-FccLM5cr47C+SE7Xjvlw+IQGY/xmreJ8yTIEwqA6OXs=" crossorigin="anonymous" />
+    <link rel="icon" sizes="16x16" type="image/x-icon" href="/static/favicon-x16.png" />
+    <link rel="icon" sizes="32x32" type="image/x-icon" href="/static/favicon-x32.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.3/semantic.min.css"
+      integrity="sha256-ncjDAd2/rm/vaNTqp7Kk96MfSeHACtbiDU9NWKqNuCI="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/modal.min.css"
+      integrity="sha256-FccLM5cr47C+SE7Xjvlw+IQGY/xmreJ8yTIEwqA6OXs="
+      crossorigin="anonymous"
+    />
 
-  <script async data-main="/static/js/init.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha256-1fEPhSsRKlFKGfK3eO710tEweHh1fwokU5wFGDHO+vg=" crossorigin="anonymous"></script>
-</head>
-<body>
-  <div class="ui grid">
-    <div class="four wide column"></div>
+    <script
+      async
+      data-main="/static/js/init.js"
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"
+      integrity="sha256-1fEPhSsRKlFKGfK3eO710tEweHh1fwokU5wFGDHO+vg="
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div class="ui grid">
+      <div class="four wide column"></div>
 
-    <div class="eight wide column">
-      <div class="ui secondary pointing menu">
-        <div class="header item">PG Restore Web</div>
+      <div class="eight wide column">
+        <div class="ui secondary pointing menu">
+          <div class="header item">PG Restore Web</div>
 
-        <a class="item" data-bind="click: setSearchPage, css: { active: isSearchVisible }">Search</a>
-        <a class="item" data-bind="click: setRestorePage, css: { active: isRestoreVisible }">Restore</a>
-        <a class="item" data-bind="click: setStatusPage, css: { active: isStatusVisible }">Status</a>
-        <a class="item" data-bind="click: setJobsPage, css: { active: isJobsVisible }">Jobs</a>
+          <a class="item" data-bind="click: setSearchPage, css: { active: isSearchVisible }">Search</a>
+          <a class="item" data-bind="click: setRestorePage, css: { active: isRestoreVisible }">Restore</a>
+          <a class="item" data-bind="click: setStatusPage, css: { active: isStatusVisible }">Status</a>
+          <a class="item" data-bind="click: setJobsPage, css: { active: isJobsVisible }">Jobs</a>
+        </div>
+
+        <div data-bind="visible: isSearchVisible"><ko-search params="callback: searchCallback"></ko-search></div>
+
+        <div data-bind="visible: isRestoreVisible">
+          <ko-restore params="backup: backupSearchResult, restoreCallback: showJStatusCallback"></ko-restore>
+        </div>
+
+        <div data-bind="visible: isStatusVisible"><ko-status params="jobid: currentJobid"></ko-status></div>
+
+        <div data-bind="visible: isJobsVisible"><ko-jobs params="callback: showJStatusCallback"></ko-jobs></div>
       </div>
 
-      <div data-bind="visible: isSearchVisible">
-        <ko-search params="callback: searchCallback"></ko-search>
-      </div>
-
-      <div data-bind="visible: isRestoreVisible">
-        <ko-restore params="backup: backupSearchResult, restoreCallback: showJStatusCallback"></ko-restore>
-      </div>
-
-      <div data-bind="visible: isStatusVisible">
-        <ko-status params="jobid: currentJobid"></ko-status>
-      </div>
-
-      <div data-bind="visible: isJobsVisible">
-        <ko-jobs params="callback: showJStatusCallback"></ko-jobs>
-      </div>
+      <div class="four wide column"></div>
     </div>
-
-    <div class="four wide column"></div>
-  </div>
-</body>
+  </body>
 </html>

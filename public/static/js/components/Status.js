@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "reqwest" ], function(ko, reqwest) {
+define(["knockout", "reqwest"], function(ko, reqwest) {
 	const STATUS_INPROGRESS = "InProgress";
 	const STATUS_SUCCESS = "Success";
 	const STATUS_FAILED = "Failed";
@@ -95,7 +95,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		} else {
 			return value;
 		}
-	}
+	};
 
 	Status.prototype.updateStatus = function() {
 		const res = reqwest({
@@ -108,28 +108,34 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 				stdout_position: this.stdoutPosition,
 				stderr_position: this.stderrPosition,
 			}),
-		}).then(function(resp) {
-			if (resp.success) {
-				const data = resp.result;
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						const data = resp.result;
 
-				this.stdoutPosition = data.stdout_position;
-				this.stderrPosition = data.stderr_position;
+						this.stdoutPosition = data.stdout_position;
+						this.stderrPosition = data.stderr_position;
 
-				this.databaseName(data.database_name);
-				this.stage(data.stage);
-				this.stdout(this.trimValue(this.stdout() + data.stdout, this.stdoutTrimmed));
-				this.stderr(this.trimValue(this.stderr() + data.stderr, this.stderrTrimmed));
-				this.status(data.status);
+						this.databaseName(data.database_name);
+						this.stage(data.stage);
+						this.stdout(this.trimValue(this.stdout() + data.stdout, this.stdoutTrimmed));
+						this.stderr(this.trimValue(this.stderr() + data.stderr, this.stderrTrimmed));
+						this.status(data.status);
 
-				if (data.status === STATUS_INPROGRESS) {
-					this.timerId = setTimeout(this.updateStatus.bind(this), 1000);
-				} else {
+						if (data.status === STATUS_INPROGRESS) {
+							this.timerId = setTimeout(this.updateStatus.bind(this), 1000);
+						} else {
+							this.timerId = undefined;
+						}
+					}
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
 					this.timerId = undefined;
-				}
-			}
-		}.bind(this)).fail(function(err, msg) {
-			this.timerId = undefined;
-		}.bind(this));
+				}.bind(this)
+			);
 	};
 
 	return Status;

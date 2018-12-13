@@ -11,19 +11,23 @@
   <div class="ui form" data-bind="css: { loading: isLoading }">
     <div class="field" data-bind="css: { error: isDestinationInvalid }">
       <label for="destination">Destination:</label>
-      <select id="destination" data-bind="
+      <select
+        id="destination"
+        data-bind="
           options: availableDestinations,
           optionsText: 'name',
           optionsValue: 'index',
           value: selectedDestination,
           optionsCaption: 'Choose destination...'
-        " class="ui dropdown">
+        "
+        class="ui dropdown"
+      >
       </select>
     </div>
 
     <div class="field" data-bind="css: { error: isBackupPathInvalid }">
       <label for="backup">Backup file path:</label>
-      <input id="backup" type="text" data-bind="textInput: backup" placeholder="Path to backup">
+      <input id="backup" type="text" data-bind="textInput: backup" placeholder="Path to backup" />
     </div>
 
     <div class="inline fields">
@@ -31,14 +35,31 @@
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="backup_path" type="radio" name="backup_type" value="Path" data-bind="checked: backupType" checked="" tabindex="0" class="hidden">
+          <input
+            id="backup_path"
+            type="radio"
+            name="backup_type"
+            value="Path"
+            data-bind="checked: backupType"
+            checked=""
+            tabindex="0"
+            class="hidden"
+          />
           <label for="backup_path">use as path</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="backup_url" type="radio" name="backup_type" value="Url" data-bind="checked: backupType" tabindex="0" class="hidden">
+          <input
+            id="backup_url"
+            type="radio"
+            name="backup_type"
+            value="Url"
+            data-bind="checked: backupType"
+            tabindex="0"
+            class="hidden"
+          />
           <label for="backup_url">use as URL</label>
         </div>
       </div>
@@ -46,7 +67,7 @@
 
     <div class="field" data-bind="css: { error: isDatabaseNameInvalid }">
       <label for="database_name">Database name:</label>
-      <input id="database_name" type="text" data-bind="textInput: databaseName" placeholder="database">
+      <input id="database_name" type="text" data-bind="textInput: databaseName" placeholder="database" />
     </div>
 
     <div class="inline fields">
@@ -54,21 +75,46 @@
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="database_exists" type="radio" name="database" value="Exists" data-bind="checked: database" tabindex="0" class="hidden">
+          <input
+            id="database_exists"
+            type="radio"
+            name="database"
+            value="Exists"
+            data-bind="checked: database"
+            tabindex="0"
+            class="hidden"
+          />
           <label for="database_exists">use exists</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="database_create" type="radio" name="database" value="Create" data-bind="checked: database" checked="" tabindex="0" class="hidden">
+          <input
+            id="database_create"
+            type="radio"
+            name="database"
+            value="Create"
+            data-bind="checked: database"
+            checked=""
+            tabindex="0"
+            class="hidden"
+          />
           <label for="database_create">create new</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="database_dropcreate" type="radio" name="database" value="DropAndCreate" data-bind="checked: database" tabindex="0" class="hidden">
+          <input
+            id="database_dropcreate"
+            type="radio"
+            name="database"
+            value="DropAndCreate"
+            data-bind="checked: database"
+            tabindex="0"
+            class="hidden"
+          />
           <label for="database_dropcreate">drop exists and create</label>
         </div>
       </div>
@@ -79,46 +125,73 @@
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="restore_full" type="radio" name="restore" value="Full" data-bind="checked: restore" checked="" tabindex="0" class="hidden">
+          <input
+            id="restore_full"
+            type="radio"
+            name="restore"
+            value="Full"
+            data-bind="checked: restore"
+            checked=""
+            tabindex="0"
+            class="hidden"
+          />
           <label for="restore_full">whole backup</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="restore_schema" type="radio" name="restore" value="Schema" data-bind="checked: restore" tabindex="0" class="hidden">
+          <input
+            id="restore_schema"
+            type="radio"
+            name="restore"
+            value="Schema"
+            data-bind="checked: restore"
+            tabindex="0"
+            class="hidden"
+          />
           <label for="restore_schema">schema's only</label>
         </div>
       </div>
 
       <div class="field">
         <div class="ui radio checkbox">
-          <input id="restore_tables" type="radio" name="restore" value="Tables" data-bind="checked: restore" tabindex="0" class="hidden">
+          <input
+            id="restore_tables"
+            type="radio"
+            name="restore"
+            value="Tables"
+            data-bind="checked: restore"
+            tabindex="0"
+            class="hidden"
+          />
           <label for="restore_tables">tables only</label>
         </div>
       </div>
     </div>
 
     <div class="field" data-bind="visible: isRestoreSchemas, css: { error: isRestoreSchemasInvalid }">
-      <label>Schema names:</label>
-      <input type="text" data-bind="textInput: schemas" placeholder="schema names">
+      <label>Schema names:</label> <input type="text" data-bind="textInput: schemas" placeholder="schema names" />
     </div>
 
     <div class="field" data-bind="visible: isRestoreTables, css: { error: isRestoreTablesInvalid }">
-      <label>Full table names (with schema part):</label>
-      <textarea rows="2" data-bind="textInput: tables"></textarea>
+      <label>Full table names (with schema part):</label> <textarea rows="2" data-bind="textInput: tables"></textarea>
     </div>
 
     <div class="inline field">
       <div class="ui checkbox">
-        <input id="ignore_errors" type="checkbox" data-bind="checked: ignoreErrors" tabindex="0" class="hidden"></input>
+        <input id="ignore_errors" type="checkbox" data-bind="checked: ignoreErrors" tabindex="0" class="hidden" />
         <label for="ignore_errors">Ignore restore errors</label>
       </div>
     </div>
 
     <div class="four ui buttons">
-      <button class="ui primary button" data-bind="click: restoreDatabase, css: { disabled: isFormInvalid }">Restore</button>
-      <button class="ui grey button" data-bind="click: convertSlashes, css: { disabled: isBackupPathInvalid }">Convert path slashes</button>
+      <button class="ui primary button" data-bind="click: restoreDatabase, css: { disabled: isFormInvalid }">
+        Restore
+      </button>
+      <button class="ui grey button" data-bind="click: convertSlashes, css: { disabled: isBackupPathInvalid }">
+        Convert path slashes
+      </button>
       <button class="ui grey button" data-bind="click: schemaFromCode">Schema's from query</button>
       <button class="ui grey button" data-bind="click: tablesFromCode">Tables from query</button>
     </div>

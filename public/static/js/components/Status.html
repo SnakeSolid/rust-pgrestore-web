@@ -1,19 +1,15 @@
 <div class="ui segment" data-bind="visible: isJobDefined">
   <h3 class="ui header">Job #<span data-bind="text: jobid"></span> Status</h3>
 
-  <div class="ui positive message" data-bind="visible: isSuccess">
-    <p>Job completed successfully</p>
-  </div>
+  <div class="ui positive message" data-bind="visible: isSuccess"><p>Job completed successfully</p></div>
 
-  <div class="ui negative message" data-bind="visible: isFailed">
-    <p>Job completed with error</p>
-  </div>
+  <div class="ui negative message" data-bind="visible: isFailed"><p>Job completed with error</p></div>
 
   <p>Database name: <span data-bind="text: databaseName">&mdash;</span></p>
   <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
 
   <div class="ui checkbox">
-    <input id="truncate_output" type="checkbox" data-bind="checked: truncateOutput">
+    <input id="truncate_output" type="checkbox" data-bind="checked: truncateOutput" />
     <label for="truncate_output">Truncate output</label>
   </div>
 
@@ -25,6 +21,4 @@
   </div>
 </div>
 
-<div class="ui segment" data-bind="visible: isJobUndefined">
-  <h3 class="ui header">Job Not Selected</h3>
-</div>
+<div class="ui segment" data-bind="visible: isJobUndefined"><h3 class="ui header">Job Not Selected</h3></div>

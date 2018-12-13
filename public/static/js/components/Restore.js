@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "reqwest" ], function(ko, reqwest) {
+define(["knockout", "reqwest"], function(ko, reqwest) {
 	const BACKUP_PATH = "Path";
 	const BACKUP_URL = "Url";
 	const DATABASE_EXISTS = "Exists";
@@ -11,11 +11,11 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	const RESTORE_TABLES = "Tables";
 
 	const EXTRACT_TABLES_RES = [
-			/insert\s+into\s+(\w+\.\w+)\b/gi,
-			/update\s+(\w+\.\w+)\b/gi,
-			/from\s+(\w+\.\w+)\b/gi,
-			/join\s+(\w+\.\w+)\b/gi,
-		];
+		/insert\s+into\s+(\w+\.\w+)\b/gi,
+		/update\s+(\w+\.\w+)\b/gi,
+		/from\s+(\w+\.\w+)\b/gi,
+		/join\s+(\w+\.\w+)\b/gi,
+	];
 	const SEPARATORS_RE = /[\s,]+/;
 	const WORDS_RE = /\w+/;
 
@@ -83,30 +83,42 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		}, this);
 
 		this.isFormInvalid = ko.pureComputed(function() {
-			return this.isDestinationInvalid()
-				|| this.isBackupPathInvalid()
-				|| this.isDatabaseNameInvalid()
-				|| this.isRestoreSchemasInvalid()
-				|| this.isRestoreTablesInvalid();
+			return (
+				this.isDestinationInvalid() ||
+				this.isBackupPathInvalid() ||
+				this.isDatabaseNameInvalid() ||
+				this.isRestoreSchemasInvalid() ||
+				this.isRestoreTablesInvalid()
+			);
 		}, this);
 
 		this.schemaCallback = function(text) {
 			this.restore(RESTORE_SCHEMA);
-			this.schemas(this.parseSchema(text.toLowerCase()).sort().join(", "));
+			this.schemas(
+				this.parseSchema(text.toLowerCase())
+					.sort()
+					.join(", ")
+			);
 		}.bind(this);
 
 		this.tablesCallback = function(text) {
 			this.restore(RESTORE_TABLES);
-			this.tables(this.parseTables(text.toLowerCase()).sort().join(", "));
+			this.tables(
+				this.parseTables(text.toLowerCase())
+					.sort()
+					.join(", ")
+			);
 		}.bind(this);
 
-		this.backup.subscribe(function(value) {
-			if (value.startsWith("http://") || value.startsWith("https://")) {
-				this.backupType(BACKUP_URL);
-			} else {
-				this.backupType(BACKUP_PATH);
-			}
-		}.bind(this));
+		this.backup.subscribe(
+			function(value) {
+				if (value.startsWith("http://") || value.startsWith("https://")) {
+					this.backupType(BACKUP_URL);
+				} else {
+					this.backupType(BACKUP_PATH);
+				}
+			}.bind(this)
+		);
 
 		this.loadDestinations();
 	};
@@ -139,22 +151,28 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		const res = reqwest({
 			url: "/api/v1/destination",
 			type: "json",
-  			method: "POST",
-		}).then(function(resp) {
-			if (resp.success) {
-				this.availableDestinations(resp.result);
-				this.isError(false);
-			} else {
-				this.isError(true);
-				this.errorMessage(resp.message);
-			}
+			method: "POST",
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						this.availableDestinations(resp.result);
+						this.isError(false);
+					} else {
+						this.isError(true);
+						this.errorMessage(resp.message);
+					}
 
-			this.isLoading(false);
-		}.bind(this)).fail(function(err, msg) {
-			this.isLoading(false);
-			this.isError(true);
-			this.errorMessage(msg);
-		}.bind(this));
+					this.isLoading(false);
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					this.isLoading(false);
+					this.isError(true);
+					this.errorMessage(msg);
+				}.bind(this)
+			);
 
 		this.isLoading(true);
 	};
@@ -180,10 +198,14 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			result.type = RESTORE_FULL;
 		} else if (this.isRestoreSchemas()) {
 			result.type = RESTORE_SCHEMA;
-			result.schema = this.schemas().split(SEPARATORS_RE).filter(nonEmptyString);
+			result.schema = this.schemas()
+				.split(SEPARATORS_RE)
+				.filter(nonEmptyString);
 		} else if (this.isRestoreTables()) {
 			result.type = RESTORE_TABLES;
-			result.tables = this.tables().split(SEPARATORS_RE).filter(nonEmptyString);
+			result.tables = this.tables()
+				.split(SEPARATORS_RE)
+				.filter(nonEmptyString);
 		}
 
 		return result;
@@ -192,10 +214,10 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 	Restore.prototype.restoreDatabase = function() {
 		const res = reqwest({
 			url: "/api/v1/restore",
-		  	type: "json",
-  			method: "POST",
-  			contentType: "application/json",
-  			data: JSON.stringify({
+			type: "json",
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify({
 				destination: this.selectedDestination(),
 				backup: this.backupToCall(),
 				database_name: this.databaseName(),
@@ -203,21 +225,27 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 				restore: this.restoreToCall(),
 				ignore_errors: this.ignoreErrors(),
 			}),
-		}).then(function(resp) {
-			if (resp.success) {
-				this.restoreCallback(resp.result);
-				this.isError(false);
-			} else {
-				this.isError(true);
-				this.errorMessage(resp.message);
-			}
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						this.restoreCallback(resp.result);
+						this.isError(false);
+					} else {
+						this.isError(true);
+						this.errorMessage(resp.message);
+					}
 
-			this.isLoading(false);
-		}.bind(this)).fail(function(err, msg) {
-			this.isLoading(false);
-			this.isError(true);
-			this.errorMessage(msg);
-		}.bind(this));
+					this.isLoading(false);
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					this.isLoading(false);
+					this.isError(true);
+					this.errorMessage(msg);
+				}.bind(this)
+			);
 
 		this.isLoading(true);
 	};
@@ -249,13 +277,16 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 			const result = text.match(re);
 
 			if (result !== null) {
-				result.map(function(item) {
-					return re.exec(item);
-				}).filter(function(item) {
-					return item !== null;
-				}).forEach(function (item) {
-					tables.add(item[1]);
-				});
+				result
+					.map(function(item) {
+						return re.exec(item);
+					})
+					.filter(function(item) {
+						return item !== null;
+					})
+					.forEach(function(item) {
+						tables.add(item[1]);
+					});
 			}
 		}
 
@@ -266,7 +297,7 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		const tables = this.parseTables(text);
 		const schema = new Set();
 
-		tables.forEach(function (tableName) {
+		tables.forEach(function(tableName) {
 			const index = tableName.indexOf(".");
 
 			if (index > 0) {

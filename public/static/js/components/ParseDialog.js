@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "reqwest" ], function(ko, reqwest) {
+define(["knockout", "reqwest"], function(ko, reqwest) {
 	const Restore = function(params) {
 		this.callback = params.callback;
 		this.visible = params.visible;

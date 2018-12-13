@@ -1,9 +1,8 @@
 "use strict";
 
-define([ "knockout", "reqwest" ], function(ko, reqwest) {
+define(["knockout", "reqwest"], function(ko, reqwest) {
 	const Restore = function(params) {
 		this.callback = params.callback;
-
 
 		this.query = ko.observable("");
 		this.isLoading = ko.observable(false);
@@ -24,28 +23,34 @@ define([ "knockout", "reqwest" ], function(ko, reqwest) {
 		const res = reqwest({
 			url: "/api/v1/search",
 			type: "json",
-  			method: "POST",
-  			contentType: "application/json",
-  			data: JSON.stringify({
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify({
 				query: this.query(),
 			}),
-		}).then(function(resp) {
-			if (resp.success) {
-				this.isError(false);
-				this.results(resp.result);
-			} else {
-				this.isError(true);
-				this.errorMessage(resp.message);
-				this.results([]);
-			}
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						this.isError(false);
+						this.results(resp.result);
+					} else {
+						this.isError(true);
+						this.errorMessage(resp.message);
+						this.results([]);
+					}
 
-			this.isLoading(false);
-		}.bind(this)).fail(function(err, msg) {
-			this.isLoading(false);
-			this.isError(true);
-			this.errorMessage(msg);
-			this.results([]);
-		}.bind(this));
+					this.isLoading(false);
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					this.isLoading(false);
+					this.isError(true);
+					this.errorMessage(msg);
+					this.results([]);
+				}.bind(this)
+			);
 
 		this.isLoading(true);
 	};

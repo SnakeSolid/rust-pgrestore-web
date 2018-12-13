@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "reqwest", "moment" ], function(ko, reqwest, moment) {
+define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 	const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
 	const STATUS_PENDING = "Pending";
@@ -34,18 +34,20 @@ define([ "knockout", "reqwest", "moment" ], function(ko, reqwest, moment) {
 			return this.status === STATUS_FAILED;
 		}, this);
 
-		this.statusString = ko.pureComputed(function() {
-			switch (this.status) {
-				case "Pending":
-					return "Pending";
-				case "InProgress":
-					return "In progress";
-				case STATUS_SUCCESS:
-					return "Finished with success";
-				case STATUS_FAILED:
-					return "Failed";
-			}
- 		}.bind(this));
+		this.statusString = ko.pureComputed(
+			function() {
+				switch (this.status) {
+					case "Pending":
+						return "Pending";
+					case "InProgress":
+						return "In progress";
+					case STATUS_SUCCESS:
+						return "Finished with success";
+					case STATUS_FAILED:
+						return "Failed";
+				}
+			}.bind(this)
+		);
 	};
 
 	const Jobs = function(params) {
@@ -71,24 +73,30 @@ define([ "knockout", "reqwest", "moment" ], function(ko, reqwest, moment) {
 			url: "/api/v1/jobs",
 			type: "json",
 			method: "POST",
-		}).then(function(resp) {
-			if (resp.success) {
-				const data = resp.result.sort(compareJobs).map(function(params) {
-					return new Job(params);
-				});
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						const data = resp.result.sort(compareJobs).map(function(params) {
+							return new Job(params);
+						});
 
-				this.results(data);
-			} else {
-				this.isError(true);
-				this.errorMessage(resp.message);
-			}
+						this.results(data);
+					} else {
+						this.isError(true);
+						this.errorMessage(resp.message);
+					}
 
-			this.isLoading(false);
-		}.bind(this)).fail(function(err, msg) {
-			this.isLoading(false);
-			this.isError(true);
-			this.errorMessage(msg);
-		}.bind(this));
+					this.isLoading(false);
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					this.isLoading(false);
+					this.isError(true);
+					this.errorMessage(msg);
+				}.bind(this)
+			);
 
 		this.isLoading(false);
 		this.isError(false);

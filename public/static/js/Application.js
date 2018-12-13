@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "components", "handlers" ], function(ko, _components, _handlers) {
+define(["knockout", "components", "handlers"], function(ko, _components, _handlers) {
 	const PAGE_SEARCH = "Search";
 	const PAGE_RESTORE = "Restore";
 	const PAGE_STATUS = "Status";
