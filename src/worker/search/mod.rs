@@ -3,8 +3,8 @@ mod error;
 pub use self::error::WorkerError;
 pub use self::error::WorkerResult;
 
-use config::ConfigRef;
-use pathmanager::PathManagerRef;
+use crate::config::ConfigRef;
+use crate::pathmanager::PathManagerRef;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;

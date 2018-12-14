@@ -1,4 +1,4 @@
-use pathmanager::PathManagerError;
+use crate::pathmanager::PathManagerError;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;

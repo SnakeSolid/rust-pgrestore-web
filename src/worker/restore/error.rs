@@ -1,5 +1,5 @@
-use http::HttpClientError;
-use jobmanager::JobManagerError;
+use crate::http::HttpClientError;
+use crate::jobmanager::JobManagerError;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;

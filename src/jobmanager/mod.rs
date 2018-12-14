@@ -6,7 +6,7 @@ pub use self::error::JobManagerResult;
 pub use self::job::Job;
 pub use self::job::JobStatus;
 
-use config::ConfigRef;
+use crate::config::ConfigRef;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

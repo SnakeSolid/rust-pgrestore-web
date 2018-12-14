@@ -3,7 +3,7 @@ mod error;
 pub use self::error::HttpClientError;
 pub use self::error::HttpClientResult;
 
-use config::ConfigRef;
+use crate::config::ConfigRef;
 use reqwest::Certificate;
 use reqwest::Client;
 use reqwest::IntoUrl;

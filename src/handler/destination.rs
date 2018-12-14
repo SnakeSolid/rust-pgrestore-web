@@ -1,6 +1,5 @@
 use super::util::handle_empty;
-
-use config::ConfigRef;
+use crate::config::ConfigRef;
 use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IromRequest;

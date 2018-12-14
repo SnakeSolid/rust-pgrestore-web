@@ -1,13 +1,12 @@
 use super::util::handle_empty;
 use super::HandlerError;
-
-use config::ConfigRef;
+use crate::config::ConfigRef;
+use crate::jobmanager::JobManagerRef;
+use crate::jobmanager::JobStatus;
 use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
-use jobmanager::JobManagerRef;
-use jobmanager::JobStatus;
 
 #[derive(Debug)]
 pub struct JobsHandler {
@@ -39,7 +38,8 @@ impl Handler for JobsHandler {
                         job.status(),
                         job.stage(),
                     ))
-                }).map_err(|_| HandlerError::new("Job manager error"))?;
+                })
+                .map_err(|_| HandlerError::new("Job manager error"))?;
 
             Ok(result)
         })

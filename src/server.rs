@@ -1,15 +1,15 @@
-use config::ConfigRef;
-use handler::DestinationHandler;
-use handler::JobsHandler;
-use handler::RestoreHandler;
-use handler::SearchHandler;
-use handler::StatusHandler;
-use http::HttpClientRef;
+use crate::config::ConfigRef;
+use crate::handler::DestinationHandler;
+use crate::handler::JobsHandler;
+use crate::handler::RestoreHandler;
+use crate::handler::SearchHandler;
+use crate::handler::StatusHandler;
+use crate::http::HttpClientRef;
+use crate::jobmanager::JobManagerRef;
+use crate::options::Options;
+use crate::pathmanager::PathManagerRef;
 use iron::Iron;
-use jobmanager::JobManagerRef;
 use mount::Mount;
-use options::Options;
-use pathmanager::PathManagerRef;
 use staticfile::Static;
 
 pub fn start(

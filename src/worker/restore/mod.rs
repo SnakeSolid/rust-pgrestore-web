@@ -6,13 +6,12 @@ pub use self::error::WorkerResult;
 
 use self::command::WorkerCommand;
 use self::command::WorkerSettings;
-
-use config::ConfigRef;
-use config::Destination;
-use http::HttpClientRef;
-use http::HttpClientResult;
-use http::PathHandle;
-use jobmanager::JobManagerRef;
+use crate::config::ConfigRef;
+use crate::config::Destination;
+use crate::http::HttpClientRef;
+use crate::http::HttpClientResult;
+use crate::http::PathHandle;
+use crate::jobmanager::JobManagerRef;
 use std::collections::HashSet;
 use std::fmt::Arguments;
 use std::fs::OpenOptions;

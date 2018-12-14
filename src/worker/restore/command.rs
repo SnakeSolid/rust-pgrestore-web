@@ -1,8 +1,7 @@
 use super::error::WorkerError;
 use super::error::WorkerResult;
-
-use jobmanager::Job;
-use jobmanager::JobManagerRef;
+use crate::jobmanager::Job;
+use crate::jobmanager::JobManagerRef;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;

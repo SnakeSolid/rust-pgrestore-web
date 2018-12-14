@@ -1,15 +1,14 @@
 use super::util::handle_request;
 use super::HandlerError;
 use super::HandlerResult;
-
-use config::ConfigRef;
+use crate::config::ConfigRef;
+use crate::jobmanager::Job;
+use crate::jobmanager::JobManagerRef;
+use crate::jobmanager::JobStatus;
 use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
-use jobmanager::Job;
-use jobmanager::JobManagerRef;
-use jobmanager::JobStatus;
 use std::fs::File;
 use std::io::Read;
 use std::io::Seek;

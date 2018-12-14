@@ -1,12 +1,11 @@
 use super::util::handle_request;
 use super::HandlerError;
-
-use config::ConfigRef;
+use crate::config::ConfigRef;
+use crate::pathmanager::PathManagerRef;
 use iron::middleware::Handler;
 use iron::IronResult;
 use iron::Request as IronRequest;
 use iron::Response as IronResponse;
-use pathmanager::PathManagerRef;
 
 #[derive(Debug)]
 pub struct SearchHandler {

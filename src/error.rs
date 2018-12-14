@@ -1,5 +1,5 @@
-use config::ConfigError;
-use http::HttpClientError;
+use crate::config::ConfigError;
+use crate::http::HttpClientError;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;

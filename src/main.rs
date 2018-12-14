@@ -4,18 +4,6 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate env_logger;
-extern crate iron;
-extern crate mount;
-extern crate reqwest;
-extern crate router;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_yaml;
-extern crate staticfile;
-extern crate structopt;
-extern crate time;
-
 mod config;
 mod error;
 mod handler;
@@ -26,9 +14,9 @@ mod pathmanager;
 mod server;
 mod worker;
 
-use error::ApplicationError;
-use error::ApplicationResult;
-use options::Options;
+use crate::error::ApplicationError;
+use crate::error::ApplicationResult;
+use crate::options::Options;
 use structopt::StructOpt;
 
 fn main() -> ApplicationResult {
