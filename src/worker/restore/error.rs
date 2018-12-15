@@ -1,3 +1,4 @@
+use super::DatabaseError;
 use crate::http::HttpClientError;
 use crate::jobmanager::JobManagerError;
 use std::error::Error;
@@ -63,6 +64,10 @@ impl WorkerError {
     }
 
     pub fn download_error(error: HttpClientError) -> Self {
+        WorkerError::new(&format!("{}", error))
+    }
+
+    pub fn query_execution_error(error: DatabaseError) -> Self {
         WorkerError::new(&format!("{}", error))
     }
 

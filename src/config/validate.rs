@@ -15,7 +15,6 @@ pub fn validate(config: ConfigRef) -> ConfigResult<()> {
     validate_file(config.commands().createdb_path().into(), "createdb")?;
     validate_file(config.commands().dropdb_path().into(), "dropdb")?;
     validate_file(config.commands().pgrestore_path().into(), "pgrestore")?;
-    validate_file(config.commands().psql_path().into(), "psql")?;
 
     Ok(())
 }

@@ -74,35 +74,6 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn create_schema(&self, name: &str) -> WorkerResult<()> {
-        info!(
-            "Creating schema {} in database {}",
-            name,
-            self.settings.database_name()
-        );
-
-        self.settings
-            .job_manager()
-            .set_stage(self.jobid, "Create schema")
-            .map_err(WorkerError::set_stage_error)?;
-
-        let mut command = Command::new(self.settings.psql_path());
-
-        command
-            .env("PGPASSWORD", self.settings.password())
-            .arg("--host")
-            .arg(self.settings.host())
-            .arg("--port")
-            .arg(format!("{}", self.settings.port()))
-            .arg("--username")
-            .arg(self.settings.role())
-            .arg("--command")
-            .arg(format!("CREATE SCHEMA IF NOT EXISTS {}", name))
-            .arg(&self.settings.database_name());
-
-        self.wait_command(command)
-    }
-
     pub fn drop_database(&self) -> WorkerResult<()> {
         info!("Dropping database {}", self.settings.database_name());
 
@@ -197,81 +168,11 @@ impl<'a> WorkerCommand<'a> {
             .arg(&self.settings.database_name())
             .arg("--schema")
             .arg(name)
-            .arg("--clean")
             .arg("--no-owner")
             .arg("--no-privileges")
             .arg("--jobs")
             .arg(format!("{}", self.settings.restore_jobs()))
             .arg(backup_path);
-
-        self.wait_command(command)
-    }
-
-    pub fn restore_schema_only(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
-        info!(
-            "Restoring schema only {} to {} from {}",
-            name,
-            self.settings.database_name(),
-            backup_path.display(),
-        );
-
-        self.settings
-            .job_manager()
-            .set_stage(self.jobid, &format!("Restore schema {}", name))
-            .map_err(WorkerError::set_stage_error)?;
-
-        let mut command = Command::new(self.settings.pgrestore_path());
-
-        command
-            .env_clear()
-            .env("PGPASSWORD", self.settings.password())
-            .arg("--verbose")
-            .arg("--host")
-            .arg(self.settings.host())
-            .arg("--port")
-            .arg(format!("{}", self.settings.port()))
-            .arg("--username")
-            .arg(self.settings.role())
-            .arg("--dbname")
-            .arg(&self.settings.database_name())
-            .arg("--schema")
-            .arg(name)
-            .arg("--schema-only")
-            .arg("--no-owner")
-            .arg("--no-privileges")
-            .arg("--jobs")
-            .arg(format!("{}", self.settings.restore_jobs()))
-            .arg(backup_path);
-
-        self.wait_command(command)
-    }
-
-    pub fn truncate_table(&self, schema: &str, table: &str) -> WorkerResult<()> {
-        info!(
-            "Truncate table {}.{} in database {}",
-            schema,
-            table,
-            self.settings.database_name()
-        );
-
-        self.settings
-            .job_manager()
-            .set_stage(self.jobid, "Truncate table")
-            .map_err(WorkerError::set_stage_error)?;
-
-        let mut command = Command::new(self.settings.psql_path());
-
-        command
-            .env("PGPASSWORD", self.settings.password())
-            .arg("--host")
-            .arg(self.settings.host())
-            .arg("--port")
-            .arg(format!("{}", self.settings.port()))
-            .arg("--username")
-            .arg(self.settings.role())
-            .arg("--command")
-            .arg(format!("TRUNCATE {}.{}", schema, table))
-            .arg(&self.settings.database_name());
 
         self.wait_command(command)
     }
@@ -313,7 +214,6 @@ impl<'a> WorkerCommand<'a> {
             .arg(schema)
             .arg("--table")
             .arg(table)
-            .arg("--data-only")
             .arg("--no-owner")
             .arg("--no-privileges")
             .arg(backup_path);
@@ -333,7 +233,6 @@ pub trait WorkerSettings {
     fn createdb_path(&self) -> &str;
     fn dropdb_path(&self) -> &str;
     fn pgrestore_path(&self) -> &str;
-    fn psql_path(&self) -> &str;
     fn restore_jobs(&self) -> usize;
     fn job_manager(&self) -> &JobManagerRef;
     fn host(&self) -> &str;

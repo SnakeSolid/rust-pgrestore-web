@@ -1,8 +1,11 @@
 mod command;
 mod error;
+mod postgres;
 
 pub use self::error::WorkerError;
 pub use self::error::WorkerResult;
+pub use self::postgres::DatabaseError;
+pub use self::postgres::PostgreSQL;
 
 use self::command::WorkerCommand;
 use self::command::WorkerSettings;
@@ -201,7 +204,7 @@ impl Worker {
         self,
         jobid: usize,
         backup_path: &Path,
-        schema: &[String],
+        schemas: &[String],
         drop_database: bool,
         create_database: bool,
     ) -> WorkerResult<()> {
@@ -215,14 +218,53 @@ impl Worker {
 
         if create_database {
             self.execute_step(jobid, || command.create_database())?;
+        } else {
+            self.execute_step(jobid, || self.cleanup_schemas(jobid, schemas))?;
         }
 
-        for name in schema {
-            self.execute_step(jobid, || command.create_schema(name))?;
+        self.execute_step(jobid, || self.create_schemas(jobid, schemas))?;
+
+        for name in schemas {
             self.execute_step_soft(jobid, || command.restore_schema(name, &backup_path))?;
         }
 
         self.set_complete(jobid, true)
+    }
+
+    fn create_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<()> {
+        let postgres = PostgreSQL::new(
+            self.destination.host(),
+            self.destination.port(),
+            self.destination.role(),
+            self.destination.password(),
+            &self.database_name,
+        );
+
+        self.job_manager
+            .set_stage(jobid, "Creating schema's")
+            .map_err(WorkerError::set_stage_error)?;
+
+        postgres
+            .create_schemas(schemas)
+            .map_err(WorkerError::query_execution_error)
+    }
+
+    fn cleanup_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<()> {
+        let postgres = PostgreSQL::new(
+            self.destination.host(),
+            self.destination.port(),
+            self.destination.role(),
+            self.destination.password(),
+            &self.database_name,
+        );
+
+        self.job_manager
+            .set_stage(jobid, "Cleaning schema's")
+            .map_err(WorkerError::set_stage_error)?;
+
+        postgres
+            .drop_schemas(schemas)
+            .map_err(WorkerError::query_execution_error)
     }
 
     fn execute_backup_tables(
@@ -241,21 +283,41 @@ impl Worker {
             self.execute_step(jobid, || command.drop_database())?;
         }
 
+        let table_names = self.split_table_names(&tables);
+
         if create_database {
             self.execute_step(jobid, || command.create_database())?;
-
-            for name in &self.collect_schema_names(&tables) {
-                self.execute_step(jobid, || command.create_schema(name))?;
-                self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
-            }
+        } else {
+            self.execute_step(jobid, || self.cleanup_tables(jobid, &table_names))?;
         }
 
-        for (schema, table) in &self.split_table_names(&tables) {
-            self.execute_step(jobid, || command.truncate_table(schema, table))?;
+        let schemas = self.collect_schema_names(&tables);
+
+        self.execute_step(jobid, || self.create_schemas(jobid, &schemas))?;
+
+        for (schema, table) in &table_names {
             self.execute_step_soft(jobid, || command.restore_table(schema, table, &backup_path))?;
         }
 
         self.set_complete(jobid, true)
+    }
+
+    fn cleanup_tables(&self, jobid: usize, tables: &[(String, String)]) -> WorkerResult<()> {
+        let postgres = PostgreSQL::new(
+            self.destination.host(),
+            self.destination.port(),
+            self.destination.role(),
+            self.destination.password(),
+            &self.database_name,
+        );
+
+        self.job_manager
+            .set_stage(jobid, "Cleaning tables")
+            .map_err(WorkerError::set_stage_error)?;
+
+        postgres
+            .drop_tables(tables)
+            .map_err(WorkerError::query_execution_error)
     }
 
     fn write_error(&self, jobid: usize, args: Arguments) -> WorkerResult<()> {
@@ -271,7 +333,7 @@ impl Worker {
             .map_err(WorkerError::io_error)?;
 
         stdout
-            .write_fmt(format_args!("{}", args))
+            .write_fmt(format_args!("{}\n", args))
             .map_err(WorkerError::io_error)?;
         self.set_complete(jobid, false)?;
 
@@ -353,7 +415,7 @@ impl Worker {
             .map_err(WorkerError::set_status_error)
     }
 
-    fn collect_schema_names(&self, tables: &[String]) -> HashSet<String> {
+    fn collect_schema_names(&self, tables: &[String]) -> Vec<String> {
         let mut result = HashSet::new();
 
         for table in tables {
@@ -362,7 +424,7 @@ impl Worker {
             }
         }
 
-        result
+        result.into_iter().collect()
     }
 
     fn split_table_names(&self, tables: &[String]) -> Vec<(String, String)> {
@@ -402,10 +464,6 @@ impl WorkerSettings for Worker {
 
     fn pgrestore_path(&self) -> &str {
         self.config.commands().pgrestore_path()
-    }
-
-    fn psql_path(&self) -> &str {
-        self.config.commands().psql_path()
     }
 
     fn restore_jobs(&self) -> usize {
