@@ -50,7 +50,7 @@ impl<'a> WorkerCommand<'a> {
         }
     }
 
-    pub fn create_database(&self) -> WorkerResult<()> {
+    pub fn create_database(&self, template: Option<&String>) -> WorkerResult<()> {
         info!("Creating database {}", self.settings.database_name());
 
         self.settings
@@ -68,8 +68,13 @@ impl<'a> WorkerCommand<'a> {
             .arg("--port")
             .arg(format!("{}", self.settings.port()))
             .arg("--username")
-            .arg(self.settings.role())
-            .arg(&self.settings.database_name());
+            .arg(self.settings.role());
+
+        if let Some(template) = template {
+            command.arg("--template").arg(template);
+        }
+
+        command.arg(&self.settings.database_name());
 
         self.wait_command(command)
     }

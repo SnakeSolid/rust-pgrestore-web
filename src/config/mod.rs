@@ -16,6 +16,7 @@ pub struct Config {
     max_jobs: usize,
     joblogs_path: String,
     restore_jobs: usize,
+    template: Option<String>,
     search_config: SearchConfig,
     http_config: HttpConfig,
     commands: Commands,
@@ -33,6 +34,10 @@ impl Config {
 
     pub fn restore_jobs(&self) -> usize {
         self.restore_jobs
+    }
+
+    pub fn template(&self) -> Option<&String> {
+        self.template.as_ref()
     }
 
     pub fn search_config(&self) -> &SearchConfig {

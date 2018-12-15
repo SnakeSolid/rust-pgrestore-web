@@ -29,6 +29,7 @@ pub struct Worker {
     job_manager: JobManagerRef,
     destination: Destination,
     database_name: String,
+    template: Option<String>,
     ignore_errors: bool,
 }
 
@@ -38,6 +39,7 @@ impl Worker {
         job_manager: JobManagerRef,
         destination: &Destination,
         database_name: &str,
+        template: Option<&String>,
         ignore_errors: bool,
     ) -> Worker {
         Worker {
@@ -45,6 +47,7 @@ impl Worker {
             job_manager,
             destination: destination.clone(),
             database_name: database_name.into(),
+            template: template.cloned(),
             ignore_errors,
         }
     }
@@ -190,7 +193,7 @@ impl Worker {
         }
 
         if create_database {
-            self.execute_step(jobid, || command.create_database())?;
+            self.execute_step(jobid, || command.create_database(self.template.as_ref()))?;
         }
 
         self.execute_step_soft(jobid, || {
@@ -217,7 +220,7 @@ impl Worker {
         }
 
         if create_database {
-            self.execute_step(jobid, || command.create_database())?;
+            self.execute_step(jobid, || command.create_database(self.template.as_ref()))?;
         } else {
             self.execute_step(jobid, || self.cleanup_schemas(jobid, schemas))?;
         }
@@ -286,7 +289,7 @@ impl Worker {
         let table_names = self.split_table_names(&tables);
 
         if create_database {
-            self.execute_step(jobid, || command.create_database())?;
+            self.execute_step(jobid, || command.create_database(self.template.as_ref()))?;
         } else {
             self.execute_step(jobid, || self.cleanup_tables(jobid, &table_names))?;
         }

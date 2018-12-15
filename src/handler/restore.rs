@@ -67,6 +67,7 @@ impl Handler for RestoreHandler {
                 self.job_manager.clone(),
                 destination,
                 request.database_name.as_ref(),
+                self.config.template(),
                 request.ignore_errors,
             );
 
