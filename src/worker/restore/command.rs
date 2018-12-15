@@ -127,7 +127,7 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn restore_backup(&self, backup_path: &Path) -> WorkerResult<()> {
+    pub fn restore_backup(&self, backup_path: &Path, clean: bool) -> WorkerResult<()> {
         info!(
             "Restoring database {} from {}",
             self.settings.database_name(),
@@ -152,8 +152,13 @@ impl<'a> WorkerCommand<'a> {
             .arg("--username")
             .arg(self.settings.role())
             .arg("--dbname")
-            .arg(&self.settings.database_name())
-            .arg("--clean")
+            .arg(&self.settings.database_name());
+
+        if clean {
+            command.arg("--clean");
+        }
+
+        command
             .arg("--no-owner")
             .arg("--no-privileges")
             .arg("--jobs")
