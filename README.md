@@ -26,6 +26,7 @@ Simple configuration example:
 max_jobs: 10 # maximal number of jobs to store results
 joblogs_path: "logs" # directory to store restore jobs output
 restore_jobs: 8 # number of jobs for pg_restore command
+template: "template0" # optional template for new database
 
 search_config: # backup search configuration
   interval: 21600 # scanning interval in seconds
@@ -47,7 +48,6 @@ commands: # paths to PostgreSQL command line utilities
   createdb_path: /usr/bin/createdb
   dropdb_path: /usr/bin/dropdb
   pgrestore_path: /usr/bin/pg_restore
-  psql_path: /usr/bin/psql
 
 destinations: # list of PostgreSQL servers to restore database
   - host: localhost # host name
