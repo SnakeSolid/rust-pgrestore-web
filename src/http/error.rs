@@ -14,6 +14,7 @@ pub struct HttpClientError {
 }
 
 impl HttpClientError {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn reqwest_error(error: ReqwestError) -> HttpClientError {
         warn!("Reqwest error - {}", error);
 
@@ -22,6 +23,7 @@ impl HttpClientError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn mutex_lock_error<T>(error: PoisonError<T>) -> HttpClientError {
         warn!("Mutex lock error - {}", error);
 
@@ -30,6 +32,7 @@ impl HttpClientError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn io_error(error: IoError) -> HttpClientError {
         warn!("IO error - {}", error);
 

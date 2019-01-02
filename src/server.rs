@@ -12,13 +12,14 @@ use iron::Iron;
 use mount::Mount;
 use staticfile::Static;
 
+#[allow(clippy::needless_pass_by_value)]
 pub fn start(
     options: &Options,
     config: ConfigRef,
     job_manager: JobManagerRef,
     path_manager: PathManagerRef,
     http_client: HttpClientRef,
-) -> () {
+) {
     let mut mount = Mount::new();
     mount.mount(
         "/api/v1/destination",

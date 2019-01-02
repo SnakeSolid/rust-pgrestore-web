@@ -2,19 +2,17 @@ use super::ConfigError;
 use super::ConfigRef;
 use super::ConfigResult;
 
-use std::path::PathBuf;
+use std::path::Path;
 
+#[allow(clippy::needless_pass_by_value)]
 pub fn validate(config: ConfigRef) -> ConfigResult<()> {
     validate_number(config.max_jobs(), "jobs")?;
-    validate_dir(config.joblogs_path().into(), "Jobs log")?;
+    validate_dir(config.joblogs_path(), "Jobs log")?;
     validate_number(config.restore_jobs(), "restore jobs")?;
-    validate_dir(
-        config.http_config().download_directory().into(),
-        "HTTP downloads",
-    )?;
-    validate_file(config.commands().createdb_path().into(), "createdb")?;
-    validate_file(config.commands().dropdb_path().into(), "dropdb")?;
-    validate_file(config.commands().pgrestore_path().into(), "pgrestore")?;
+    validate_dir(config.http_config().download_directory(), "HTTP downloads")?;
+    validate_file(config.commands().createdb_path(), "createdb")?;
+    validate_file(config.commands().dropdb_path(), "dropdb")?;
+    validate_file(config.commands().pgrestore_path(), "pgrestore")?;
 
     Ok(())
 }
@@ -30,7 +28,12 @@ fn validate_number(value: usize, name: &str) -> ConfigResult<()> {
     }
 }
 
-fn validate_dir(path: PathBuf, name: &str) -> ConfigResult<()> {
+fn validate_dir<P>(path: P, name: &str) -> ConfigResult<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
     if !path.exists() {
         Err(ConfigError::format(format_args!(
             "File {} ({}) is not exists",
@@ -48,7 +51,12 @@ fn validate_dir(path: PathBuf, name: &str) -> ConfigResult<()> {
     }
 }
 
-fn validate_file(path: PathBuf, name: &str) -> ConfigResult<()> {
+fn validate_file<P>(path: P, name: &str) -> ConfigResult<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
     if !path.exists() {
         Err(ConfigError::format(format_args!(
             "{} directory ({}) is not exists",

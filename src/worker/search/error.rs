@@ -14,6 +14,7 @@ pub enum WorkerError {
 }
 
 impl WorkerError {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn io_error(error: IoError) -> Self {
         warn!("IO error - {}", error);
 
@@ -22,6 +23,7 @@ impl WorkerError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn add_path_error(error: PathManagerError) -> WorkerError {
         warn!("Path manager error - {}", error);
 

@@ -14,6 +14,7 @@ pub struct ConfigError {
 }
 
 impl ConfigError {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn io_error(error: IoError) -> ConfigError {
         warn!("IO error - {}", error);
 
@@ -22,6 +23,7 @@ impl ConfigError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn yaml_error(error: YamlError) -> ConfigError {
         warn!("YAML error - {}", error);
 

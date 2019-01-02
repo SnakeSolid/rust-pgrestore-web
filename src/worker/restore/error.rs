@@ -21,52 +21,61 @@ impl WorkerError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn io_error(error: IoError) -> Self {
         warn!("IO error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn spawn_command_error(error: IoError) -> Self {
         warn!("Spawn command error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn wait_command_error(error: IoError) -> Self {
         warn!("Wait command error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn spawn_thread_error(error: IoError) -> Self {
         warn!("Spawn thread error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set_stage_error(error: JobManagerError) -> Self {
         warn!("Job manager set stage error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn map_job_error(error: JobManagerError) -> Self {
         warn!("Job manager map job error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set_status_error(error: JobManagerError) -> Self {
         warn!("Job manager set status error - {}", error);
 
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn download_error(error: HttpClientError) -> Self {
         WorkerError::new(&format!("{}", error))
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn query_execution_error(error: DatabaseError) -> Self {
         WorkerError::new(&format!("{}", error))
     }

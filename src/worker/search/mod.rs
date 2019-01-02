@@ -25,6 +25,7 @@ pub struct Worker {
 const RECURSION_LIMIT: usize = 5;
 
 impl Worker {
+    #[allow(clippy::needless_pass_by_value)]
     fn new(config: ConfigRef, path_manager: PathManagerRef) -> Worker {
         let interval = config.search_config().interval();
         let directories = config
@@ -125,7 +126,7 @@ impl Worker {
 
 pub fn start(config: ConfigRef, path_manager: PathManagerRef) {
     if let Err(err) = Builder::new()
-        .name(format!("search worker"))
+        .name("search worker".to_string())
         .spawn(move || Worker::new(config, path_manager).start())
     {
         warn!("Failed to start path worker - {}", err);

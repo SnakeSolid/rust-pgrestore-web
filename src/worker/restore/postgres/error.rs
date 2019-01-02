@@ -13,12 +13,14 @@ pub enum DatabaseError {
 }
 
 impl DatabaseError {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn connection_error(error: PgError) -> DatabaseError {
         DatabaseError::ConnectionError {
             message: format!("{}", error),
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn query_execution_error(error: PgError) -> DatabaseError {
         DatabaseError::QueryExecutionError {
             message: format!("{}", error),

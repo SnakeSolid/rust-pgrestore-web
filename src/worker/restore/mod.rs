@@ -197,7 +197,7 @@ impl Worker {
         }
 
         self.execute_step_soft(jobid, || {
-            command.restore_backup(backup_path.as_ref(), !create_database)
+            command.restore_backup(backup_path, !create_database)
         })?;
 
         self.set_complete(jobid, true)

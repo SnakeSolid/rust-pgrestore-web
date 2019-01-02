@@ -59,7 +59,11 @@ impl JobManagerRef {
     where
         F: FnMut(usize, &Job),
     {
-        self.with_read(move |jobmanager| Ok(jobmanager.for_each(callback)))
+        self.with_read(move |jobmanager| {
+            jobmanager.for_each(callback);
+
+            Ok(())
+        })
     }
 
     pub fn next_jobid(&self, database_name: &str) -> JobManagerResult<usize> {
@@ -67,11 +71,19 @@ impl JobManagerRef {
     }
 
     pub fn set_stage(&self, jobid: usize, stage: &str) -> JobManagerResult<()> {
-        self.with_write(move |jobmanager| Ok(jobmanager.set_stage(jobid, stage)))
+        self.with_write(move |jobmanager| {
+            jobmanager.set_stage(jobid, stage);
+
+            Ok(())
+        })
     }
 
     pub fn set_complete(&self, jobid: usize, success: bool) -> JobManagerResult<()> {
-        self.with_write(move |jobmanager| Ok(jobmanager.set_complete(jobid, success)))
+        self.with_write(move |jobmanager| {
+            jobmanager.set_complete(jobid, success);
+
+            Ok(())
+        })
     }
 }
 
@@ -84,6 +96,7 @@ struct JobManager {
 }
 
 impl JobManager {
+    #[allow(clippy::needless_pass_by_value)]
     fn new(config: ConfigRef) -> JobManager {
         JobManager {
             max_jobs: config.max_jobs(),
@@ -136,25 +149,19 @@ impl JobManager {
     }
 
     fn set_stage(&mut self, jobid: usize, stage: &str) {
-        match self.jobs.get_mut(&jobid) {
-            Some(job) => {
-                debug!("Set job {} stage: {}", jobid, stage);
+        if let Some(job) = self.jobs.get_mut(&jobid) {
+            debug!("Set job {} stage: {}", jobid, stage);
 
-                job.set_status(JobStatus::in_progress());
-                job.set_stage(stage);
-            }
-            None => {}
+            job.set_status(JobStatus::in_progress());
+            job.set_stage(stage);
         }
     }
 
     fn set_complete(&mut self, jobid: usize, success: bool) {
-        match self.jobs.get_mut(&jobid) {
-            Some(job) => {
-                debug!("Set job {} complete with {}", jobid, success);
+        if let Some(job) = self.jobs.get_mut(&jobid) {
+            debug!("Set job {} complete with {}", jobid, success);
 
-                job.set_status(JobStatus::complete(success));
-            }
-            None => {}
+            job.set_status(JobStatus::complete(success));
         }
     }
 }

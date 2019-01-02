@@ -21,7 +21,7 @@ impl PostgreSQL {
     pub fn new(server: &str, port: u16, user: &str, password: &str, database: &str) -> PostgreSQL {
         PostgreSQL {
             server: server.into(),
-            port: port,
+            port,
             user: user.into(),
             password: password.into(),
             database: database.into(),

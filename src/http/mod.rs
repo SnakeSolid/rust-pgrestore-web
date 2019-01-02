@@ -42,7 +42,7 @@ struct HttpClient {
 }
 
 impl HttpClient {
-    fn new(config: ConfigRef) -> HttpClientResult<HttpClient> {
+    fn create(config: ConfigRef) -> HttpClientResult<HttpClient> {
         let mut builder = Client::builder().gzip(true);;
 
         for cetrificate_path in config.http_config().root_certificates() {
@@ -51,11 +51,12 @@ impl HttpClient {
             let mut buffer = Vec::new();
 
             File::open(cetrificate_path)
-                .unwrap()
+                .map_err(HttpClientError::io_error)?
                 .read_to_end(&mut buffer)
-                .unwrap();
+                .map_err(HttpClientError::io_error)?;
 
-            let certificate = Certificate::from_pem(&buffer).unwrap();
+            let certificate =
+                Certificate::from_pem(&buffer).map_err(HttpClientError::reqwest_error)?;
 
             builder = builder.add_root_certificate(certificate);
         }
@@ -111,7 +112,7 @@ impl HttpClient {
 
 pub fn create(config: ConfigRef) -> HttpClientResult<HttpClientRef> {
     Ok(HttpClientRef {
-        inner: Arc::new(Mutex::new(HttpClient::new(config)?)),
+        inner: Arc::new(Mutex::new(HttpClient::create(config)?)),
     })
 }
 

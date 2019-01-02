@@ -48,18 +48,30 @@ impl PathManagerRef {
     where
         F: FnMut(&Path),
     {
-        self.with_read(move |pathmanager| Ok(pathmanager.query_paths(query, n, callback)))
+        self.with_read(move |pathmanager| {
+            pathmanager.query_paths(query, n, callback);
+
+            Ok(())
+        })
     }
 
     pub fn retain<F>(&self, callback: F) -> PathManagerResult<()>
     where
         F: Fn(&PathBuf) -> bool,
     {
-        self.with_write(move |pathmanager| Ok(pathmanager.retain(callback)))
+        self.with_write(move |pathmanager| {
+            pathmanager.retain(callback);
+
+            Ok(())
+        })
     }
 
     pub fn add_path(&self, path: &Path) -> PathManagerResult<()> {
-        self.with_write(move |pathmanager| Ok(pathmanager.add_path(path)))
+        self.with_write(move |pathmanager| {
+            pathmanager.add_path(path);
+
+            Ok(())
+        })
     }
 }
 
@@ -121,7 +133,7 @@ impl PathManager {
             remove_ids.insert(id.clone());
         }
 
-        for (_, ids) in &mut self.index {
+        for ids in self.index.values_mut() {
             ids.retain(|id| !remove_ids.contains(id));
         }
 
@@ -137,10 +149,10 @@ impl PathManager {
             let name = component.to_string_lossy().to_lowercase();
 
             if let Some(ids) = self.index.get(&name) {
-                for _ in ids
+                if ids
                     .iter()
                     .filter_map(|id| self.paths.get(id))
-                    .filter(|&p| p == &path)
+                    .any(|p| p == &path)
                 {
                     return;
                 }

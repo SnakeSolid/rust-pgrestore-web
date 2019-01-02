@@ -15,6 +15,7 @@ pub enum ApplicationError {
 }
 
 impl ApplicationError {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn read_config_error(error: ConfigError) -> ApplicationError {
         error!("Failed to read configuration - {}", error);
 
@@ -23,6 +24,7 @@ impl ApplicationError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn config_error(error: ConfigError) -> ApplicationError {
         error!("Invalid configuration - {}", error);
 
@@ -31,6 +33,7 @@ impl ApplicationError {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     pub fn http_client_error(error: HttpClientError) -> ApplicationError {
         error!("HTTP client error - {}", error);
 
