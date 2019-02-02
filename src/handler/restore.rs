@@ -41,10 +41,10 @@ impl Handler for RestoreHandler {
 
             match request.backup {
                 Backup::Path { ref path } if path.is_empty() => {
-                    return Err(HandlerError::new("Backup path must not be empty"))
+                    return Err(HandlerError::new("Backup path must not be empty"));
                 }
                 Backup::Url { ref url } if url.is_empty() => {
-                    return Err(HandlerError::new("Backup URL must not be empty"))
+                    return Err(HandlerError::new("Backup URL must not be empty"));
                 }
                 _ => {}
             }
@@ -75,8 +75,17 @@ impl Handler for RestoreHandler {
                 (RestoreType::Full, Backup::Path { path }) => worker
                     .restore_file_full(job_id, path.as_ref(), drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::Schema { schema }, Backup::Path { path }) => worker
-                    .restore_file_schema(
+                (RestoreType::SchemaOnly { schema }, Backup::Path { path }) => worker
+                    .restore_file_schema_only(
+                        job_id,
+                        path.as_ref(),
+                        &schema,
+                        drop_database,
+                        create_database,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
+                (RestoreType::SchemaData { schema }, Backup::Path { path }) => worker
+                    .restore_file_schema_data(
                         job_id,
                         path.as_ref(),
                         &schema,
@@ -102,8 +111,18 @@ impl Handler for RestoreHandler {
                         create_database,
                     )
                     .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::Schema { schema }, Backup::Url { url }) => worker
-                    .restore_url_schema(
+                (RestoreType::SchemaOnly { schema }, Backup::Url { url }) => worker
+                    .restore_url_schema_only(
+                        job_id,
+                        &url,
+                        self.http_client.clone(),
+                        &schema,
+                        drop_database,
+                        create_database,
+                    )
+                    .map_err(|err| HandlerError::new(err.message()))?,
+                (RestoreType::SchemaData { schema }, Backup::Url { url }) => worker
+                    .restore_url_schema_data(
                         job_id,
                         &url,
                         self.http_client.clone(),
@@ -157,6 +176,7 @@ enum DatabaseType {
 #[derive(Debug, Deserialize)]
 enum RestoreType {
     Full,
-    Schema { schema: Vec<String> },
+    SchemaOnly { schema: Vec<String> },
+    SchemaData { schema: Vec<String> },
     Tables { tables: Vec<String> },
 }

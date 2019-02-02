@@ -66,7 +66,7 @@ impl Worker {
         })
     }
 
-    pub fn restore_file_schema(
+    pub fn restore_file_schema_only(
         self,
         jobid: usize,
         backup_path: &Path,
@@ -78,7 +78,29 @@ impl Worker {
         let schema = schema.to_owned();
 
         self.do_async(jobid, move |worker| {
-            worker.execute_backup_schema(
+            worker.execute_backup_schema_only(
+                jobid,
+                backup_path.as_ref(),
+                &schema,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    pub fn restore_file_schema_data(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let backup_path = backup_path.to_path_buf();
+        let schema = schema.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            worker.execute_backup_schema_data(
                 jobid,
                 backup_path.as_ref(),
                 &schema,
@@ -127,7 +149,7 @@ impl Worker {
         })
     }
 
-    pub fn restore_url_schema(
+    pub fn restore_url_schema_only(
         self,
         jobid: usize,
         url: &str,
@@ -142,7 +164,32 @@ impl Worker {
         self.do_async(jobid, move |worker| {
             let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
 
-            worker.execute_backup_schema(
+            worker.execute_backup_schema_only(
+                jobid,
+                backup_path.as_ref(),
+                &schema,
+                drop_database,
+                create_database,
+            )
+        })
+    }
+
+    pub fn restore_url_schema_data(
+        self,
+        jobid: usize,
+        url: &str,
+        http_client: HttpClientRef,
+        schema: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let url = url.to_string();
+        let schema = schema.to_owned();
+
+        self.do_async(jobid, move |worker| {
+            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
+
+            worker.execute_backup_schema_data(
                 jobid,
                 backup_path.as_ref(),
                 &schema,
@@ -203,7 +250,7 @@ impl Worker {
         self.set_complete(jobid, true)
     }
 
-    fn execute_backup_schema(
+    fn execute_backup_schema_only(
         self,
         jobid: usize,
         backup_path: &Path,
@@ -228,7 +275,38 @@ impl Worker {
         self.execute_step(jobid, || self.create_schemas(jobid, schemas))?;
 
         for name in schemas {
-            self.execute_step_soft(jobid, || command.restore_schema(name, &backup_path))?;
+            self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
+        }
+
+        self.set_complete(jobid, true)
+    }
+
+    fn execute_backup_schema_data(
+        self,
+        jobid: usize,
+        backup_path: &Path,
+        schemas: &[String],
+        drop_database: bool,
+        create_database: bool,
+    ) -> WorkerResult<()> {
+        let command = WorkerCommand::new(jobid, &self);
+
+        self.check_backup_path(jobid, &backup_path)?;
+
+        if drop_database {
+            self.execute_step(jobid, || command.drop_database())?;
+        }
+
+        if create_database {
+            self.execute_step(jobid, || command.create_database(self.template.as_ref()))?;
+        } else {
+            self.execute_step(jobid, || self.cleanup_schemas(jobid, schemas))?;
+        }
+
+        self.execute_step(jobid, || self.create_schemas(jobid, schemas))?;
+
+        for name in schemas {
+            self.execute_step_soft(jobid, || command.restore_schema_data(name, &backup_path))?;
         }
 
         self.set_complete(jobid, true)

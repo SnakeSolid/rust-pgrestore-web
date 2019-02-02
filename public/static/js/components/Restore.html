@@ -142,15 +142,30 @@
       <div class="field">
         <div class="ui radio checkbox">
           <input
-            id="restore_schema"
+            id="restore_schema_only"
             type="radio"
             name="restore"
-            value="Schema"
+            value="SchemaOnly"
             data-bind="checked: restore"
             tabindex="0"
             class="hidden"
           />
-          <label for="restore_schema">schema's only</label>
+          <label for="restore_schema_only">schema's only</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="ui radio checkbox">
+          <input
+            id="restore_schema_data"
+            type="radio"
+            name="restore"
+            value="SchemaData"
+            data-bind="checked: restore"
+            tabindex="0"
+            class="hidden"
+          />
+          <label for="restore_schema_data">schema's and data</label>
         </div>
       </div>
 

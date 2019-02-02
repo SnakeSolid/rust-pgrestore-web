@@ -7,7 +7,8 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 	const DATABASE_CREATE = "Create";
 	const DATABASE_DROPANDCREATE = "DropAndCreate";
 	const RESTORE_FULL = "Full";
-	const RESTORE_SCHEMA = "Schema";
+	const RESTORE_SCHEMA_ONLY = "SchemaOnly";
+	const RESTORE_SCHEMA_DATA = "SchemaData";
 	const RESTORE_TABLES = "Tables";
 
 	const EXTRACT_TABLES_RES = [
@@ -74,8 +75,16 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 			return this.restore() === RESTORE_FULL;
 		}, this);
 
+		this.isRestoreSchemaOnly = ko.pureComputed(function() {
+			return this.restore() === RESTORE_SCHEMA_ONLY;
+		}, this);
+
+		this.isRestoreSchemaData = ko.pureComputed(function() {
+			return this.restore() === RESTORE_SCHEMA_DATA;
+		}, this);
+
 		this.isRestoreSchemas = ko.pureComputed(function() {
-			return this.restore() === RESTORE_SCHEMA;
+			return this.isRestoreSchemaOnly() || this.isRestoreSchemaData();
 		}, this);
 
 		this.isRestoreTables = ko.pureComputed(function() {
@@ -170,7 +179,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 				function(err, msg) {
 					this.isLoading(false);
 					this.isError(true);
-					this.errorMessage(msg);
+					this.errorMessage(msg || err.responseText);
 				}.bind(this)
 			);
 
@@ -196,8 +205,13 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 
 		if (this.isRestoreFull()) {
 			result.type = RESTORE_FULL;
-		} else if (this.isRestoreSchemas()) {
-			result.type = RESTORE_SCHEMA;
+		} else if (this.isRestoreSchemaOnly()) {
+			result.type = RESTORE_SCHEMA_ONLY;
+			result.schema = this.schemas()
+				.split(SEPARATORS_RE)
+				.filter(nonEmptyString);
+		} else if (this.isRestoreSchemaData()) {
+			result.type = RESTORE_SCHEMA_DATA;
 			result.schema = this.schemas()
 				.split(SEPARATORS_RE)
 				.filter(nonEmptyString);
@@ -243,7 +257,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 				function(err, msg) {
 					this.isLoading(false);
 					this.isError(true);
-					this.errorMessage(msg);
+					this.errorMessage(msg || err.responseText);
 				}.bind(this)
 			);
 

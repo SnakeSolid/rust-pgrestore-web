@@ -144,9 +144,48 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn restore_schema(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
+    pub fn restore_schema_only(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
         info!(
-            "Restoring schema {} to {} from {}",
+            "Restoring schema only ({}) to {} from {}",
+            name,
+            self.settings.database_name(),
+            backup_path.display(),
+        );
+
+        self.settings
+            .job_manager()
+            .set_stage(self.jobid, &format!("Restore schema {}", name))
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.settings.pgrestore_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.settings.password())
+            .arg("--verbose")
+            .arg("--host")
+            .arg(self.settings.host())
+            .arg("--port")
+            .arg(format!("{}", self.settings.port()))
+            .arg("--username")
+            .arg(self.settings.role())
+            .arg("--dbname")
+            .arg(&self.settings.database_name())
+            .arg("--schema")
+            .arg(name)
+            .arg("--schema-only")
+            .arg("--no-owner")
+            .arg("--no-privileges")
+            .arg("--jobs")
+            .arg(format!("{}", self.settings.restore_jobs()))
+            .arg(backup_path);
+
+        self.wait_command(command)
+    }
+
+    pub fn restore_schema_data(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
+        info!(
+            "Restoring schema and data ({}) to {} from {}",
             name,
             self.settings.database_name(),
             backup_path.display(),
