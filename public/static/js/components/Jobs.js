@@ -94,7 +94,7 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 				function(err, msg) {
 					this.isLoading(false);
 					this.isError(true);
-					this.errorMessage(msg);
+					this.errorMessage(msg || err.responseText);
 				}.bind(this)
 			);
 

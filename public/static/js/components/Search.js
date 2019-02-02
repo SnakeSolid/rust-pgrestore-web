@@ -47,7 +47,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 				function(err, msg) {
 					this.isLoading(false);
 					this.isError(true);
-					this.errorMessage(msg);
+					this.errorMessage(msg || err.responseText);
 					this.results([]);
 				}.bind(this)
 			);
