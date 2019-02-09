@@ -26,7 +26,10 @@ Simple configuration example:
 max_jobs: 10 # maximal number of jobs to store results
 joblogs_path: "logs" # directory to store restore jobs output
 restore_jobs: 8 # number of jobs for pg_restore command
-template: "template0" # optional template for new database
+
+templates: # template settings
+  full: "template0" # optional template for restoring full database backup
+  partial: "template0" # optional template for restoring partial backup (schema's or table)
 
 search_config: # backup search configuration
   interval: 21600 # scanning interval in seconds

@@ -16,7 +16,7 @@ pub struct Config {
     max_jobs: usize,
     joblogs_path: String,
     restore_jobs: usize,
-    template: Option<String>,
+    templates: TemplateConfig,
     search_config: SearchConfig,
     http_config: HttpConfig,
     commands: Commands,
@@ -36,8 +36,8 @@ impl Config {
         self.restore_jobs
     }
 
-    pub fn template(&self) -> Option<&String> {
-        self.template.as_ref()
+    pub fn templates(&self) -> &TemplateConfig {
+        &self.templates
     }
 
     pub fn search_config(&self) -> &SearchConfig {
@@ -54,6 +54,22 @@ impl Config {
 
     pub fn destinations(&self) -> &[Destination] {
         &self.destinations
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TemplateConfig {
+    full: Option<String>,
+    partial: Option<String>,
+}
+
+impl TemplateConfig {
+    pub fn full(&self) -> Option<&String> {
+        self.full.as_ref()
+    }
+
+    pub fn partial(&self) -> Option<&String> {
+        self.partial.as_ref()
     }
 }
 
