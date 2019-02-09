@@ -17,6 +17,10 @@ Optional arguments:
 * `-c` (`--config`) PATH: Path to configuration file, default value - config.yaml;
 * `-h` (`--help`): Show help and exit.
 
+## Dependencies
+
+This utility internally uses `createdb`, `dropdb` and `pg_restore` command line tools from `postgresql-client`.
+
 ## Configuration Example
 
 Simple configuration example:
