@@ -50,6 +50,8 @@ http_config: # HTTP dowloader settings
   root_certificates: [] # list root certificates in PEM format, if MITM proxy used
   accept_invalid_hostnames: false # accept invalid SSL certificates (default: false)
   accept_invalid_certs: false # accept invalid SSL host names (default: false)
+  cors: # Cross-origin resource sharing setting (default: cors disabled)
+    type: AllowAny # allow all requests
 
 commands: # paths to PostgreSQL command line utilities
   createdb_path: /usr/bin/createdb
