@@ -5,6 +5,7 @@ pub use self::error::ConfigError;
 pub use self::error::ConfigResult;
 pub use self::validate::validate;
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
@@ -108,6 +109,8 @@ pub struct HttpConfig {
     accept_invalid_hostnames: bool,
     #[serde(default)]
     accept_invalid_certs: bool,
+    #[serde(default)]
+    cors: Option<Cors>,
 }
 
 impl HttpConfig {
@@ -126,6 +129,17 @@ impl HttpConfig {
     pub fn accept_invalid_certs(&self) -> bool {
         self.accept_invalid_certs
     }
+
+    pub fn cors(&self) -> Option<&Cors> {
+        self.cors.as_ref()
+    }
+}
+
+#[serde(tag = "type")]
+#[derive(Debug, Clone, Deserialize)]
+pub enum Cors {
+    AllowAny,
+    Whitelist { whitelist: HashSet<String> },
 }
 
 #[derive(Debug, Deserialize)]

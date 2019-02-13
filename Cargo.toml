@@ -11,6 +11,7 @@ codegen-units = 1
 [dependencies]
 env_logger = "0.5"
 iron = "0.6"
+iron-cors = "0.8"
 log = "0.4"
 mount = "0.4"
 postgres = "0.15"
