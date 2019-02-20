@@ -1,6 +1,6 @@
 "use strict";
 
-define(["knockout", "reqwest"], function(ko, reqwest) {
+define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 	const BACKUP_PATH = "Path";
 	const BACKUP_URL = "Url";
 	const DATABASE_EXISTS = "Exists";
@@ -166,6 +166,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 				function(resp) {
 					if (resp.success) {
 						this.availableDestinations(resp.result);
+						this.selectedDestination(Storage.getPreferredDestination());
 						this.isError(false);
 					} else {
 						this.isError(true);

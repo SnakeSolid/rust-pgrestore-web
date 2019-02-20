@@ -5,6 +5,7 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 	const PAGE_RESTORE = "Restore";
 	const PAGE_STATUS = "Status";
 	const PAGE_JOBS = "Jobs";
+	const PAGE_SETTINGS = "Settings";
 
 	const Application = function() {
 		this.currentPage = ko.observable(PAGE_RESTORE);
@@ -25,6 +26,10 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 
 		this.isJobsVisible = ko.pureComputed(function() {
 			return this.currentPage() === PAGE_JOBS;
+		}, this);
+
+		this.isSettingsVisible = ko.pureComputed(function() {
+			return this.currentPage() === PAGE_SETTINGS;
 		}, this);
 
 		this.searchCallback = function(value) {
@@ -52,6 +57,10 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 
 	Application.prototype.setJobsPage = function() {
 		this.currentPage(PAGE_JOBS);
+	};
+
+	Application.prototype.setSettingsPage = function() {
+		this.currentPage(PAGE_SETTINGS);
 	};
 
 	return Application;

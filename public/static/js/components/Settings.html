@@ -1,0 +1,30 @@
+<div class="ui segment">
+  <h3>Restore Settings</h3>
+
+  <div class="ui icon negative message" data-bind="visible: isError">
+    <div class="content">
+      <h3>Error</h3>
+      <p data-bind="text: errorMessage"></p>
+    </div>
+  </div>
+
+  <div class="ui form" data-bind="css: { loading: isLoading }">
+    <div class="field">
+      <label for="destination">Preferred destination:</label>
+      <select
+        id="destination"
+        data-bind="
+          options: availableDestinations,
+          optionsText: 'name',
+          optionsValue: 'index',
+          value: selectedDestination,
+          optionsCaption: 'No destination...'
+        "
+        class="ui dropdown"
+      >
+      </select>
+    </div>
+
+    <button class="ui primary fluid button" data-bind="click: saveSettings">Save settings</button>
+  </div>
+</div>

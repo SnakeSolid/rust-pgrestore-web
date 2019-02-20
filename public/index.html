@@ -40,6 +40,7 @@
           <a class="item" data-bind="click: setRestorePage, css: { active: isRestoreVisible }">Restore</a>
           <a class="item" data-bind="click: setStatusPage, css: { active: isStatusVisible }">Status</a>
           <a class="item" data-bind="click: setJobsPage, css: { active: isJobsVisible }">Jobs</a>
+          <a class="item" data-bind="click: setSettingsPage, css: { active: isSettingsVisible }">Settings</a>
         </div>
 
         <div data-bind="visible: isSearchVisible"><ko-search params="callback: searchCallback"></ko-search></div>
@@ -51,6 +52,8 @@
         <div data-bind="visible: isStatusVisible"><ko-status params="jobid: currentJobid"></ko-status></div>
 
         <div data-bind="visible: isJobsVisible"><ko-jobs params="callback: showJStatusCallback"></ko-jobs></div>
+
+        <div data-bind="visible: isSettingsVisible"><ko-settings></ko-settings></div>
       </div>
 
       <div class="four wide column"></div>

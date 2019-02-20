@@ -25,4 +25,9 @@ define(["knockout"], function(ko) {
 		viewModel: { require: "components/Jobs" },
 		template: { require: "text!components/Jobs.html" },
 	});
+
+	ko.components.register("ko-settings", {
+		viewModel: { require: "components/Settings" },
+		template: { require: "text!components/Settings.html" },
+	});
 });
