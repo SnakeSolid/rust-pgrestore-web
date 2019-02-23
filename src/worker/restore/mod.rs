@@ -462,7 +462,7 @@ impl Worker {
     where
         F: FnOnce() -> WorkerResult<CommandStatus>,
     {
-        match dbg!(callback()) {
+        match callback() {
             Ok(CommandStatus::Success) => Ok(()),
             Ok(CommandStatus::Aborted) => {
                 self.write_error(jobid, format_args!("Job aborted"))?;
@@ -491,7 +491,7 @@ impl Worker {
             .set_stage(jobid, "Download file")
             .map_err(WorkerError::set_stage_error)?;
 
-        match dbg!(callback()) {
+        match callback() {
             Ok(path) => Ok(path),
             Err(err) => {
                 self.write_error(jobid, format_args!("{}", err))?;
@@ -507,7 +507,7 @@ impl Worker {
         F: FnOnce() -> WorkerResult<CommandStatus>,
     {
         if self.ignore_errors {
-            match dbg!(callback()) {
+            match callback() {
                 Ok(CommandStatus::Success) | Ok(CommandStatus::Failed) | Err(_) => Ok(()),
                 Ok(CommandStatus::Aborted) => {
                     self.write_error(jobid, format_args!("Job aborted"))?;
