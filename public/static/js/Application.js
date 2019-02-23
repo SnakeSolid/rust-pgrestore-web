@@ -1,6 +1,6 @@
 "use strict";
 
-define(["knockout", "components", "handlers"], function(ko, _components, _handlers) {
+define(["knockout", "reqwest", "components", "handlers"], function(ko, reqwest, _components, _handlers) {
 	const PAGE_SEARCH = "Search";
 	const PAGE_RESTORE = "Restore";
 	const PAGE_STATUS = "Status";
@@ -11,6 +11,7 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 		this.currentPage = ko.observable(PAGE_RESTORE);
 		this.currentJobid = ko.observable();
 		this.backupSearchResult = ko.observable("");
+		this.destinations = ko.observableArray();
 
 		this.isSearchVisible = ko.pureComputed(function() {
 			return this.currentPage() === PAGE_SEARCH;
@@ -41,6 +42,8 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 			this.currentJobid(jobid);
 			this.currentPage(PAGE_STATUS);
 		}.bind(this);
+
+		this.loadDestinations();
 	};
 
 	Application.prototype.setSearchPage = function() {
@@ -61,6 +64,28 @@ define(["knockout", "components", "handlers"], function(ko, _components, _handle
 
 	Application.prototype.setSettingsPage = function() {
 		this.currentPage(PAGE_SETTINGS);
+	};
+
+	Application.prototype.loadDestinations = function() {
+		reqwest({
+			url: "/api/v1/destination",
+			type: "json",
+			method: "POST",
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						this.destinations(resp.result);
+					} else {
+						console.error(resp.message);
+					}
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					console.error(msg || err.responseText);
+				}.bind(this)
+			);
 	};
 
 	return Application;

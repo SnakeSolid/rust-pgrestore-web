@@ -1,46 +1,19 @@
 "use strict";
 
-define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
+define(["knockout", "Storage"], function(ko, Storage) {
 	const Settings = function(params) {
-		this.availableDestinations = ko.observableArray();
+		this.availableDestinations = params.destinations;
 		this.selectedDestination = ko.observable();
 		this.isLoading = ko.observable(false);
 		this.isError = ko.observable(false);
 		this.errorMessage = ko.observable();
 
-		// TODO: Remove common destinations code with restore.
-		this.loadDestinations();
+		this.updateSelectedDestination();
+		this.availableDestinations.subscribe(this.updateSelectedDestination);
 	};
 
-	Settings.prototype.loadDestinations = function() {
-		const res = reqwest({
-			url: "/api/v1/destination",
-			type: "json",
-			method: "POST",
-		})
-			.then(
-				function(resp) {
-					if (resp.success) {
-						this.availableDestinations(resp.result);
-						this.selectedDestination(Storage.getPreferredDestination());
-						this.isError(false);
-					} else {
-						this.isError(true);
-						this.errorMessage(resp.message);
-					}
-
-					this.isLoading(false);
-				}.bind(this)
-			)
-			.fail(
-				function(err, msg) {
-					this.isLoading(false);
-					this.isError(true);
-					this.errorMessage(msg || err.responseText);
-				}.bind(this)
-			);
-
-		this.isLoading(true);
+	Settings.prototype.updateSelectedDestination = function() {
+		this.selectedDestination(Storage.getPreferredDestination());
 	};
 
 	Settings.prototype.saveSettings = function() {

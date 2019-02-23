@@ -28,7 +28,7 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
 
-		this.availableDestinations = ko.observableArray();
+		this.availableDestinations = params.destinations;
 		this.selectedDestination = ko.observable();
 		this.backupType = ko.observable(BACKUP_PATH);
 		this.databaseName = ko.observable("");
@@ -129,7 +129,12 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 			}.bind(this)
 		);
 
-		this.loadDestinations();
+		this.updateSelectedDestination();
+		this.availableDestinations.subscribe(this.updateSelectedDestination);
+	};
+
+	Restore.prototype.updateSelectedDestination = function() {
+		this.selectedDestination(Storage.getPreferredDestination());
 	};
 
 	Restore.prototype.setDatabaseExists = function() {
@@ -154,37 +159,6 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 
 	Restore.prototype.setRestoreTables = function() {
 		this.restore(RESTORE_TABLES);
-	};
-
-	Restore.prototype.loadDestinations = function() {
-		const res = reqwest({
-			url: "/api/v1/destination",
-			type: "json",
-			method: "POST",
-		})
-			.then(
-				function(resp) {
-					if (resp.success) {
-						this.availableDestinations(resp.result);
-						this.selectedDestination(Storage.getPreferredDestination());
-						this.isError(false);
-					} else {
-						this.isError(true);
-						this.errorMessage(resp.message);
-					}
-
-					this.isLoading(false);
-				}.bind(this)
-			)
-			.fail(
-				function(err, msg) {
-					this.isLoading(false);
-					this.isError(true);
-					this.errorMessage(msg || err.responseText);
-				}.bind(this)
-			);
-
-		this.isLoading(true);
 	};
 
 	Restore.prototype.backupToCall = function() {
@@ -227,7 +201,7 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 	};
 
 	Restore.prototype.restoreDatabase = function() {
-		const res = reqwest({
+		reqwest({
 			url: "/api/v1/restore",
 			type: "json",
 			method: "POST",

@@ -26,10 +26,10 @@ requirejs(
 		ko.applyBindings(application);
 	},
 	function(err) {
-		console.log(err.requireType);
+		console.error(err.requireType);
 
 		if (err.requireType === "timeout") {
-			console.log("modules: " + err.requireModules);
+			console.error("modules: " + err.requireModules);
 		}
 
 		throw err;
