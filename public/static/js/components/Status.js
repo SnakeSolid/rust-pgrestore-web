@@ -1,8 +1,10 @@
 "use strict";
 
 define(["knockout", "reqwest"], function(ko, reqwest) {
+	const STATUS_LOADING = "Loading";
 	const STATUS_INPROGRESS = "InProgress";
 	const STATUS_SUCCESS = "Success";
+	const STATUS_ABORTED = "Aborted";
 	const STATUS_FAILED = "Failed";
 
 	const MAX_OUTPUT_LENGTH = 8192;
@@ -20,6 +22,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 		this.stdoutTrimmed = ko.observable(false);
 		this.stderrTrimmed = ko.observable(false);
 		this.status = ko.observable(STATUS_INPROGRESS);
+		this.isAbortDisabled = ko.observable(false);
 		this.truncateOutput = ko.observable(true);
 
 		this.isJobDefined = ko.pureComputed(function() {
@@ -30,12 +33,20 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 			return this.jobid() === undefined;
 		}, this);
 
+		this.isLoading = ko.pureComputed(function() {
+			return this.status() === STATUS_LOADING;
+		}, this);
+
 		this.isInProgress = ko.pureComputed(function() {
 			return this.status() === STATUS_INPROGRESS;
 		}, this);
 
 		this.isSuccess = ko.pureComputed(function() {
 			return this.status() === STATUS_SUCCESS;
+		}, this);
+
+		this.isAborted = ko.pureComputed(function() {
+			return this.status() === STATUS_ABORTED;
 		}, this);
 
 		this.isFailed = ko.pureComputed(function() {
@@ -72,7 +83,8 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 		this.stderr("");
 		this.stdoutTrimmed(false);
 		this.stderrTrimmed(false);
-		this.status(STATUS_INPROGRESS);
+		this.isAbortDisabled(false);
+		this.status(STATUS_LOADING);
 	};
 
 	Status.prototype.checkJobid = function(newValue) {
@@ -97,8 +109,34 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 		}
 	};
 
+	Status.prototype.abortJob = function() {
+		reqwest({
+			url: "/api/v1/abort",
+			type: "json",
+			method: "POST",
+			contentType: "application/json",
+			data: JSON.stringify({
+				jobid: this.jobid(),
+			}),
+		})
+			.then(
+				function(resp) {
+					if (resp.success) {
+						this.isAbortDisabled(true);
+					} else {
+						this.isAbortDisabled(false);
+					}
+				}.bind(this)
+			)
+			.fail(
+				function(err, msg) {
+					this.isAbortDisabled(false);
+				}.bind(this)
+			);
+	};
+
 	Status.prototype.updateStatus = function() {
-		const res = reqwest({
+		reqwest({
 			url: "/api/v1/status",
 			type: "json",
 			method: "POST",

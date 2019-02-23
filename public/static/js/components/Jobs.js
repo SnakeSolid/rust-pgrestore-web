@@ -6,6 +6,7 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 	const STATUS_PENDING = "Pending";
 	const STATUS_IN_PROGRESS = "InProgress";
 	const STATUS_SUCCESS = "Success";
+	const STATUS_ABORTED = "Aborted";
 	const STATUS_FAILED = "Failed";
 
 	const compareJobs = function(a, b) {
@@ -30,6 +31,10 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 			return this.status === STATUS_SUCCESS;
 		}, this);
 
+		this.isAborted = ko.pureComputed(function() {
+			return this.status === STATUS_ABORTED;
+		}, this);
+
 		this.isFailed = ko.pureComputed(function() {
 			return this.status === STATUS_FAILED;
 		}, this);
@@ -37,12 +42,14 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 		this.statusString = ko.pureComputed(
 			function() {
 				switch (this.status) {
-					case "Pending":
+					case STATUS_PENDING:
 						return "Pending";
-					case "InProgress":
+					case STATUS_IN_PROGRESS:
 						return "In progress";
 					case STATUS_SUCCESS:
 						return "Finished with success";
+					case STATUS_ABORTED:
+						return "Aborted";
 					case STATUS_FAILED:
 						return "Failed";
 				}

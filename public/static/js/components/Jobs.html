@@ -18,7 +18,7 @@
     </thead>
     <tbody data-bind="foreach: results">
       <tr
-        data-bind="click: $component.selectJob, css: { positive: isSuccess, negative: isFailed }"
+        data-bind="click: $component.selectJob, css: { positive: isSuccess, warning: isAborted, negative: isFailed }"
         style="cursor: pointer;"
       >
         <td data-bind="text: jobid"></td>

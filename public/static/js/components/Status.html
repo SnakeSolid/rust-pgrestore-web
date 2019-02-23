@@ -1,16 +1,33 @@
-<div class="ui segment" data-bind="visible: isJobDefined">
+<div class="ui segment" data-bind="visible: isJobDefined, css: { loading: isLoading }">
   <h3 class="ui header">Job #<span data-bind="text: jobid"></span> Status</h3>
 
   <div class="ui positive message" data-bind="visible: isSuccess"><p>Job completed successfully</p></div>
 
+  <div class="ui warning message" data-bind="visible: isAborted"><p>Job aborted</p></div>
+
   <div class="ui negative message" data-bind="visible: isFailed"><p>Job completed with error</p></div>
 
-  <p>Database name: <span data-bind="text: databaseName">&mdash;</span></p>
-  <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
+  <div class="ui grid">
+    <div class="thirteen wide column">
+      <p>Database name: <span data-bind="text: databaseName">&mdash;</span></p>
+      <p>Current stage: <span data-bind="text: stage">&mdash;</span></p>
 
-  <div class="ui checkbox">
-    <input id="truncate_output" type="checkbox" data-bind="checked: truncateOutput" />
-    <label for="truncate_output">Truncate output</label>
+      <div class="column">
+        <div class="ui checkbox">
+          <input id="truncate_output" type="checkbox" data-bind="checked: truncateOutput" />
+          <label for="truncate_output">Truncate output</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="three wide right aligned column">
+      <button
+        class="ui mini negative labeled icon button"
+        data-bind="click: abortJob, visible: isInProgress, css: { disabled: isAbortDisabled }"
+      >
+        <i class="delete icon"></i>Abort
+      </button>
+    </div>
   </div>
 
   <div class="ui existing segment" style="overflow-x: scroll;">
