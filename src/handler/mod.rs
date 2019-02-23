@@ -1,3 +1,4 @@
+mod abort;
 mod destination;
 mod error;
 mod jobs;
@@ -6,6 +7,7 @@ mod search;
 mod status;
 mod util;
 
+pub use self::abort::AbortHandler;
 pub use self::destination::DestinationHandler;
 pub use self::error::HandlerError;
 pub use self::error::HandlerResult;

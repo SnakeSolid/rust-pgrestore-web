@@ -21,7 +21,7 @@ impl Handler for DestinationHandler {
         handle_empty(move || {
             let mut result = Vec::new();
 
-            for (index, destination) in self.config.destinations().into_iter().enumerate() {
+            for (index, destination) in self.config.destinations().iter().enumerate() {
                 let name = format!(
                     "{}@{}:{}",
                     destination.role(),

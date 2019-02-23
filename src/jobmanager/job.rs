@@ -68,16 +68,21 @@ impl Job {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum JobStatus {
     Pending,
     InProgress,
+    Aborted,
     Complete { success: bool },
 }
 
 impl JobStatus {
     pub fn in_progress() -> JobStatus {
         JobStatus::InProgress
+    }
+
+    pub fn aborted() -> JobStatus {
+        JobStatus::Aborted
     }
 
     pub fn complete(success: bool) -> JobStatus {

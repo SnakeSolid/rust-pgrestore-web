@@ -1,5 +1,6 @@
 use crate::config::ConfigRef;
 use crate::config::Cors;
+use crate::handler::AbortHandler;
 use crate::handler::DestinationHandler;
 use crate::handler::JobsHandler;
 use crate::handler::RestoreHandler;
@@ -31,6 +32,10 @@ pub fn start(
     mount.mount(
         "/api/v1/restore",
         RestoreHandler::new(config.clone(), job_manager.clone(), http_client.clone()),
+    );
+    mount.mount(
+        "/api/v1/abort",
+        AbortHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
         "/api/v1/status",

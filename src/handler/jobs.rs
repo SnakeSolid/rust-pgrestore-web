@@ -67,6 +67,7 @@ impl JobData {
     ) -> JobData {
         let status = match status {
             JobStatus::Pending => "Pending",
+            JobStatus::Aborted => "Aborted",
             JobStatus::InProgress => "InProgress",
             JobStatus::Complete { success } if *success => "Success",
             JobStatus::Complete { success } if !success => "Failed",

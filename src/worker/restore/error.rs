@@ -36,6 +36,13 @@ impl WorkerError {
     }
 
     #[allow(clippy::needless_pass_by_value)]
+    pub fn kill_command_error(error: IoError) -> Self {
+        warn!("Kill command error - {}", error);
+
+        WorkerError::new(&format!("{}", error))
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
     pub fn wait_command_error(error: IoError) -> Self {
         warn!("Wait command error - {}", error);
 

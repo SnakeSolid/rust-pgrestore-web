@@ -7,6 +7,7 @@ pub use self::error::WorkerResult;
 pub use self::postgres::DatabaseError;
 pub use self::postgres::PostgreSQL;
 
+use self::command::CommandStatus;
 use self::command::WorkerCommand;
 use self::command::WorkerSettings;
 use crate::config::ConfigRef;
@@ -315,7 +316,7 @@ impl Worker {
         self.set_complete(jobid, true)
     }
 
-    fn create_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<()> {
+    fn create_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
             self.destination.port(),
@@ -330,10 +331,12 @@ impl Worker {
 
         postgres
             .create_schemas(schemas)
-            .map_err(WorkerError::query_execution_error)
+            .map_err(WorkerError::query_execution_error)?;
+
+        Ok(CommandStatus::Success)
     }
 
-    fn cleanup_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<()> {
+    fn cleanup_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
             self.destination.port(),
@@ -348,7 +351,9 @@ impl Worker {
 
         postgres
             .drop_schemas(schemas)
-            .map_err(WorkerError::query_execution_error)
+            .map_err(WorkerError::query_execution_error)?;
+
+        Ok(CommandStatus::Success)
     }
 
     fn execute_backup_tables(
@@ -388,7 +393,11 @@ impl Worker {
         self.set_complete(jobid, true)
     }
 
-    fn cleanup_tables(&self, jobid: usize, tables: &[(String, String)]) -> WorkerResult<()> {
+    fn cleanup_tables(
+        &self,
+        jobid: usize,
+        tables: &[(String, String)],
+    ) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
             self.destination.port(),
@@ -403,7 +412,9 @@ impl Worker {
 
         postgres
             .drop_tables(tables)
-            .map_err(WorkerError::query_execution_error)
+            .map_err(WorkerError::query_execution_error)?;
+
+        Ok(CommandStatus::Success)
     }
 
     fn write_error(&self, jobid: usize, args: Arguments) -> WorkerResult<()> {
@@ -449,10 +460,21 @@ impl Worker {
 
     fn execute_step<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
     where
-        F: FnOnce() -> WorkerResult<()>,
+        F: FnOnce() -> WorkerResult<CommandStatus>,
     {
-        match callback() {
-            Ok(()) => Ok(()),
+        match dbg!(callback()) {
+            Ok(CommandStatus::Success) => Ok(()),
+            Ok(CommandStatus::Aborted) => {
+                self.write_error(jobid, format_args!("Job aborted"))?;
+                self.set_aborted(jobid)?;
+
+                Err(WorkerError::new("Job aborted"))
+            }
+            Ok(CommandStatus::Failed) => {
+                self.set_complete(jobid, false)?;
+
+                Err(WorkerError::new("Job failed"))
+            }
             Err(err) => {
                 self.set_complete(jobid, false)?;
 
@@ -469,7 +491,7 @@ impl Worker {
             .set_stage(jobid, "Download file")
             .map_err(WorkerError::set_stage_error)?;
 
-        match callback() {
+        match dbg!(callback()) {
             Ok(path) => Ok(path),
             Err(err) => {
                 self.write_error(jobid, format_args!("{}", err))?;
@@ -482,17 +504,27 @@ impl Worker {
 
     fn execute_step_soft<F>(&self, jobid: usize, callback: F) -> WorkerResult<()>
     where
-        F: FnOnce() -> WorkerResult<()>,
+        F: FnOnce() -> WorkerResult<CommandStatus>,
     {
-        match callback() {
-            Ok(()) => Ok(()),
-            Err(_) if self.ignore_errors => Ok(()),
-            Err(err) => {
-                self.set_complete(jobid, false)?;
+        if self.ignore_errors {
+            match dbg!(callback()) {
+                Ok(CommandStatus::Success) | Ok(CommandStatus::Failed) | Err(_) => Ok(()),
+                Ok(CommandStatus::Aborted) => {
+                    self.write_error(jobid, format_args!("Job aborted"))?;
+                    self.set_aborted(jobid)?;
 
-                Err(err)
+                    Err(WorkerError::new("Job aborted"))
+                }
             }
+        } else {
+            self.execute_step(jobid, callback)
         }
+    }
+
+    fn set_aborted(&self, jobid: usize) -> WorkerResult<()> {
+        self.job_manager
+            .set_aborted(jobid)
+            .map_err(WorkerError::set_status_error)
     }
 
     fn set_complete(&self, jobid: usize, complete: bool) -> WorkerResult<()> {

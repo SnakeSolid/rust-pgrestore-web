@@ -78,6 +78,14 @@ impl JobManagerRef {
         })
     }
 
+    pub fn set_aborted(&self, jobid: usize) -> JobManagerResult<()> {
+        self.with_write(move |jobmanager| {
+            jobmanager.set_aborted(jobid);
+
+            Ok(())
+        })
+    }
+
     pub fn set_complete(&self, jobid: usize, success: bool) -> JobManagerResult<()> {
         self.with_write(move |jobmanager| {
             jobmanager.set_complete(jobid, success);
@@ -154,6 +162,14 @@ impl JobManager {
 
             job.set_status(JobStatus::in_progress());
             job.set_stage(stage);
+        }
+    }
+
+    fn set_aborted(&mut self, jobid: usize) {
+        if let Some(job) = self.jobs.get_mut(&jobid) {
+            debug!("Set job {} aborted", jobid);
+
+            job.set_status(JobStatus::aborted());
         }
     }
 

@@ -69,6 +69,7 @@ fn job_params(job: &Job) -> (String, String, PathBuf, PathBuf, Status) {
     let status = match job.status() {
         JobStatus::Complete { success: true } => Status::Success,
         JobStatus::Complete { success: false } => Status::Failed,
+        JobStatus::Aborted => Status::Aborted,
         _ => Status::InProgress,
     };
 
@@ -128,5 +129,6 @@ struct Responce {
 enum Status {
     InProgress,
     Success,
+    Aborted,
     Failed,
 }

@@ -2,12 +2,18 @@ use super::error::WorkerError;
 use super::error::WorkerResult;
 use crate::jobmanager::Job;
 use crate::jobmanager::JobManagerRef;
+use crate::jobmanager::JobStatus;
+use std::fmt::Debug;
+use std::fs::File;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Stdio;
+use std::thread;
+use std::time::Duration;
 
+#[derive(Debug)]
 pub struct WorkerCommand<'a> {
     jobid: usize,
     settings: &'a WorkerSettings,
@@ -18,39 +24,50 @@ impl<'a> WorkerCommand<'a> {
         WorkerCommand { jobid, settings }
     }
 
-    fn wait_command(&self, mut command: Command) -> WorkerResult<()> {
+    fn is_aborted(&self) -> WorkerResult<bool> {
+        self.settings
+            .job_manager()
+            .map_job(self.jobid, |job| job.status() == &JobStatus::Aborted)
+            .map_err(WorkerError::map_job_error)?
+            .ok_or_else(|| WorkerError::new("Job not found"))
+    }
+
+    fn wait_command(&self, mut command: Command) -> WorkerResult<CommandStatus> {
+        if self.is_aborted()? {
+            return Ok(CommandStatus::Aborted);
+        }
+
         let (stdout_path, stderr_path) = self
             .settings
             .job_manager()
             .map_job(self.jobid, to_job_paths)
             .map_err(WorkerError::map_job_error)?
             .ok_or_else(|| WorkerError::new("Job not found"))?;
-        let stdout = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(stdout_path)
-            .map_err(WorkerError::io_error)?;
-        let stderr = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(stderr_path)
-            .map_err(WorkerError::io_error)?;
+        let stdout = open_file(&stdout_path)?;
+        let stderr = open_file(&stderr_path)?;
         let mut child = command
             .stdin(Stdio::null())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr))
             .spawn()
             .map_err(WorkerError::spawn_command_error)?;
-        let status = child.wait().map_err(WorkerError::wait_command_error)?;
 
-        if status.success() {
-            Ok(())
-        } else {
-            Err(WorkerError::new("Command returns non success exit code"))
+        loop {
+            if self.is_aborted()? {
+                child.kill().map_err(WorkerError::kill_command_error)?;
+
+                return Ok(CommandStatus::Aborted);
+            }
+
+            match child.try_wait().map_err(WorkerError::wait_command_error)? {
+                Some(status) if status.success() => return Ok(CommandStatus::Success),
+                Some(_) => return Ok(CommandStatus::Failed),
+                None => thread::sleep(Duration::from_secs(1)),
+            }
         }
     }
 
-    pub fn create_database(&self, template: Option<&String>) -> WorkerResult<()> {
+    pub fn create_database(&self, template: Option<&String>) -> WorkerResult<CommandStatus> {
         info!("Creating database {}", self.settings.database_name());
 
         self.settings
@@ -79,7 +96,7 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn drop_database(&self) -> WorkerResult<()> {
+    pub fn drop_database(&self) -> WorkerResult<CommandStatus> {
         info!("Dropping database {}", self.settings.database_name());
 
         self.settings
@@ -103,7 +120,7 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn restore_backup(&self, backup_path: &Path, clean: bool) -> WorkerResult<()> {
+    pub fn restore_backup(&self, backup_path: &Path, clean: bool) -> WorkerResult<CommandStatus> {
         info!(
             "Restoring database {} from {}",
             self.settings.database_name(),
@@ -144,7 +161,11 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn restore_schema_only(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
+    pub fn restore_schema_only(
+        &self,
+        name: &str,
+        backup_path: &Path,
+    ) -> WorkerResult<CommandStatus> {
         info!(
             "Restoring schema only ({}) to {} from {}",
             name,
@@ -183,7 +204,11 @@ impl<'a> WorkerCommand<'a> {
         self.wait_command(command)
     }
 
-    pub fn restore_schema_data(&self, name: &str, backup_path: &Path) -> WorkerResult<()> {
+    pub fn restore_schema_data(
+        &self,
+        name: &str,
+        backup_path: &Path,
+    ) -> WorkerResult<CommandStatus> {
         info!(
             "Restoring schema and data ({}) to {} from {}",
             name,
@@ -226,7 +251,7 @@ impl<'a> WorkerCommand<'a> {
         schema: &str,
         table: &str,
         backup_path: &Path,
-    ) -> WorkerResult<()> {
+    ) -> WorkerResult<CommandStatus> {
         info!(
             "Restoring table {}.{} to {} from {}",
             schema,
@@ -273,7 +298,22 @@ fn to_job_paths(job: &Job) -> (PathBuf, PathBuf) {
     (stdout_path, stderr_path)
 }
 
-pub trait WorkerSettings {
+fn open_file(path: &Path) -> WorkerResult<File> {
+    OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(WorkerError::io_error)
+}
+
+#[derive(Debug)]
+pub enum CommandStatus {
+    Aborted,
+    Success,
+    Failed,
+}
+
+pub trait WorkerSettings: Debug {
     fn createdb_path(&self) -> &str;
     fn dropdb_path(&self) -> &str;
     fn pgrestore_path(&self) -> &str;
