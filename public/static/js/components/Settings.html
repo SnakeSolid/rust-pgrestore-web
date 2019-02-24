@@ -2,6 +2,8 @@
   <h3>Restore Settings</h3>
 
   <div class="ui form">
+    <div class="ui hidden divider"></div>
+
     <div class="field">
       <label for="destination">Preferred destination:</label>
       <select
@@ -17,6 +19,73 @@
       >
       </select>
     </div>
+
+    <div class="ui hidden divider"></div>
+
+    <h4 class="ui header">Database name inference</h4>
+
+    <table class="ui selectable striped compact padded table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="five wide">Path Pattern</th>
+          <th class="five wide">Replace Pattern</th>
+          <th class="five wide">Change Case</th>
+        </tr>
+      </thead>
+      <tbody data-bind="foreach: namePatterns">
+        <tr>
+          <td>
+            <div class="ui mini icon buttons">
+              <button
+                class="ui button"
+                data-bind="click: $component.moveUp, enable: $component.isMoveUpAllowed($index)"
+              >
+                <i class="up arrow icon"></i>
+              </button>
+              <button
+                class="ui button"
+                data-bind="click: $component.moveDown, enable: $component.isMoveDownAllowed($index)"
+              >
+                <i class="down arrow icon"></i>
+              </button>
+              <button class="ui red button" data-bind="click: $component.removePattern">
+                <i class="delete icon"></i>
+              </button>
+            </div>
+          </td>
+          <td data-bind="text: pathPattern"></td>
+          <td data-bind="text: replacePattern"></td>
+          <td data-bind="text: changeCase"></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <td>
+          <div class="ui mini icon buttons">
+            <button class="ui green button" data-bind="click: addPattern"><i class="add icon"></i>Add</button>
+          </div>
+        </td>
+        <td class="five wide">
+          <div class="field"><input placeholder="Path pattern" type="text" data-bind="value: editPathPattern" /></div>
+        </td>
+        <td class="five wide">
+          <div class="field">
+            <input placeholder="Replace pattern" type="text" data-bind="value: editReplacePattern" />
+          </div>
+        </td>
+        <td class="five wide">
+          <div class="field">
+            <select class="ui search dropdown" data-bind="value: editChangeCase">
+              <option value="NoChange">No change</option>
+              <option value="Upper">Upper</option>
+              <option value="Lower">Lower</option>
+            </select>
+          </div>
+        </td>
+      </tfoot>
+    </table>
+
+    <div class="ui hidden divider"></div>
 
     <button class="ui primary fluid button" data-bind="click: saveSettings">Save settings</button>
   </div>

@@ -28,6 +28,8 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
 
+		this.backup.subscribe(this.inferDatabaseName.bind(this));
+
 		this.availableDestinations = params.destinations;
 		this.selectedDestination = ko.observable();
 		this.backupType = ko.observable(BACKUP_PATH);
@@ -159,6 +161,37 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 
 	Restore.prototype.setRestoreTables = function() {
 		this.restore(RESTORE_TABLES);
+	};
+
+	function tryInferName(path, pathPattern, nameTemplate) {
+		const pattern = new RegExp(pathPattern);
+		const match = path.match(pattern);
+
+		if (match !== undefined) {
+			return nameTemplate.replace(/\$\d+/g, function(group) {
+				const index = parseInt(group.substring(1));
+
+				return match[index];
+			});
+		} else {
+			return undefined;
+		}
+	}
+
+	Restore.prototype.inferDatabaseName = function(backupPath) {
+		const paterns = Storage.getNamePatterns();
+
+		if (paterns !== undefined) {
+			for (const pattern of paterns) {
+				const databaseName = tryInferName(backupPath, pattern.pathPattern, pattern.replacePattern);
+
+				if (databaseName !== undefined) {
+					this.databaseName(databaseName);
+
+					break;
+				}
+			}
+		}
 	};
 
 	Restore.prototype.backupToCall = function() {

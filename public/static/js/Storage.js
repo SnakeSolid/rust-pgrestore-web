@@ -2,6 +2,7 @@
 
 define(["exports"], function(exports) {
 	const KEY_PREFERRED_DESTINATION = "PreferredDestination";
+	const KEY_NAME_PATTERNS = "NamePatterns";
 
 	function read(key) {
 		const result = localStorage.getItem(key);
@@ -30,6 +31,18 @@ define(["exports"], function(exports) {
 			write(KEY_PREFERRED_DESTINATION, value);
 		} else {
 			remove(KEY_PREFERRED_DESTINATION);
+		}
+	};
+
+	exports.getNamePatterns = function() {
+		return read(KEY_NAME_PATTERNS);
+	};
+
+	exports.setNamePatterns = function(value) {
+		if (value !== undefined) {
+			write(KEY_NAME_PATTERNS, value);
+		} else {
+			remove(KEY_NAME_PATTERNS);
 		}
 	};
 });
