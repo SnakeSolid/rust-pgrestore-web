@@ -167,9 +167,14 @@ impl JobManager {
 
     fn set_aborted(&mut self, jobid: usize) {
         if let Some(job) = self.jobs.get_mut(&jobid) {
-            debug!("Set job {} aborted", jobid);
+            match job.status() {
+                JobStatus::Pending | JobStatus::InProgress => {
+                    debug!("Set job {} aborted", jobid);
 
-            job.set_status(JobStatus::aborted());
+                    job.set_status(JobStatus::aborted());
+                }
+                _ => {}
+            }
         }
     }
 
