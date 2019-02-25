@@ -167,7 +167,7 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 		const pattern = new RegExp(pathPattern);
 		const match = path.match(pattern);
 
-		if (match !== undefined) {
+		if (match !== null) {
 			return nameTemplate.replace(/\$\d+/g, function(group) {
 				const index = parseInt(group.substring(1));
 
