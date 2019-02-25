@@ -1,6 +1,6 @@
 "use strict";
 
-define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
+define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Storage, Pattern) {
 	const BACKUP_PATH = "Path";
 	const BACKUP_URL = "Url";
 	const DATABASE_EXISTS = "Exists";
@@ -163,48 +163,11 @@ define(["knockout", "reqwest", "Storage"], function(ko, reqwest, Storage) {
 		this.restore(RESTORE_TABLES);
 	};
 
-	function tryInferName(path, pathPattern, nameTemplate, changeCase) {
-		const pattern = new RegExp(pathPattern);
-		const match = path.match(pattern);
-
-		if (match !== null) {
-			return nameTemplate.replace(/\$\d+/g, function(group) {
-				const index = parseInt(group.substring(1));
-				const result = match[index];
-
-				if (result === undefined) {
-					return "";
-				} else if (changeCase === "Upper") {
-					return result.toUpperCase();
-				} else if (changeCase === "Lower") {
-					return result.toLowerCase();
-				} else {
-					return result;
-				}
-			});
-		} else {
-			return undefined;
-		}
-	}
-
 	Restore.prototype.inferDatabaseName = function(backupPath) {
-		const paterns = Storage.getNamePatterns();
+		const databaseName = Pattern.inferDatabaseName(backupPath);
 
-		if (paterns !== undefined) {
-			for (const pattern of paterns) {
-				const databaseName = tryInferName(
-					backupPath,
-					pattern.pathPattern,
-					pattern.replacePattern,
-					pattern.changeCase
-				);
-
-				if (databaseName !== undefined) {
-					this.databaseName(databaseName);
-
-					break;
-				}
-			}
+		if (databaseName !== undefined) {
+			this.databaseName(databaseName);
 		}
 	};
 
