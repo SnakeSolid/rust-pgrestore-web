@@ -41,6 +41,18 @@ define(["knockout", "Storage"], function(ko, Storage) {
 		this.removePattern = function(item) {
 			this.namePatterns.remove(item);
 		}.bind(this);
+
+		this.isNoChangeCase = function(item) {
+			return item.changeCase === "NoChange";
+		}.bind(this);
+
+		this.isUppercase = function(item) {
+			return item.changeCase === "Upper";
+		}.bind(this);
+
+		this.isLowercase = function(item) {
+			return item.changeCase === "Lower";
+		}.bind(this);
 	};
 
 	Settings.prototype.updateSelectedDestination = function() {

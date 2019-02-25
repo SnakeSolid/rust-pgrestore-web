@@ -13,15 +13,16 @@
           optionsText: 'name',
           optionsValue: 'index',
           value: selectedDestination,
-          optionsCaption: 'No destination...'
-        "
+          optionsCaption: 'No destination...'"
         class="ui dropdown"
       >
       </select>
     </div>
+  </div>
 
-    <div class="ui hidden divider"></div>
+  <div class="ui hidden divider"></div>
 
+  <div class="ui form">
     <h4 class="ui header">Database name inference</h4>
 
     <table class="ui selectable striped compact padded table">
@@ -56,7 +57,11 @@
           </td>
           <td data-bind="text: pathPattern"></td>
           <td data-bind="text: replacePattern"></td>
-          <td data-bind="text: changeCase"></td>
+          <td>
+            <span data-bind="if: $component.isNoChangeCase($data)">Do not change</span>
+            <span data-bind="if: $component.isUppercase($data)">to Uppercase</span>
+            <span data-bind="if: $component.isLowercase($data)">to Lowercase</span>
+          </td>
         </tr>
       </tbody>
       <tfoot>
@@ -76,9 +81,9 @@
         <td class="five wide">
           <div class="field">
             <select class="ui search dropdown" data-bind="value: editChangeCase">
-              <option value="NoChange">No change</option>
-              <option value="Upper">Upper</option>
-              <option value="Lower">Lower</option>
+              <option value="NoChange">Do no change</option>
+              <option value="Upper">to Upper</option>
+              <option value="Lower">to Lower</option>
             </select>
           </div>
         </td>
