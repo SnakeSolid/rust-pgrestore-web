@@ -4,11 +4,11 @@ define(["exports"], function(exports) {
 	const KEY_PREFERRED_DESTINATION = "PreferredDestination";
 	const KEY_NAME_PATTERNS = "NamePatterns";
 
-	function read(key) {
+	function read(key, defaultValue) {
 		const result = localStorage.getItem(key);
 
 		if (result === null) {
-			return undefined;
+			return defaultValue;
 		} else {
 			return JSON.parse(result);
 		}
@@ -23,7 +23,7 @@ define(["exports"], function(exports) {
 	}
 
 	exports.getPreferredDestination = function() {
-		return read(KEY_PREFERRED_DESTINATION);
+		return read(KEY_PREFERRED_DESTINATION, undefined);
 	};
 
 	exports.setPreferredDestination = function(value) {
@@ -35,7 +35,7 @@ define(["exports"], function(exports) {
 	};
 
 	exports.getNamePatterns = function() {
-		return read(KEY_NAME_PATTERNS);
+		return read(KEY_NAME_PATTERNS, []);
 	};
 
 	exports.setNamePatterns = function(value) {
