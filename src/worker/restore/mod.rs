@@ -432,7 +432,6 @@ impl Worker {
         stdout
             .write_fmt(format_args!("{}\n", args))
             .map_err(WorkerError::io_error)?;
-        self.set_complete(jobid, false)?;
 
         Ok(())
     }
