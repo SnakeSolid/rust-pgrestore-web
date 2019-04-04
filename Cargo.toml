@@ -9,7 +9,7 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-env_logger = "0.5"
+env_logger = "0.6"
 iron = "0.6"
 iron-cors = "0.8"
 log = "0.4"
