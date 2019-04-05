@@ -11,9 +11,9 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 
 	const compareJobs = function(a, b) {
 		if (a.jobid < b.jobid) {
-			return -1;
-		} else if (a.jobid > b.jobid) {
 			return 1;
+		} else if (a.jobid > b.jobid) {
+			return -1;
 		}
 
 		return 0;
