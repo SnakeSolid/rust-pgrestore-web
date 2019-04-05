@@ -1,10 +1,10 @@
 use crate::config::ConfigRef;
 use crate::config::Cors;
 use crate::handler::AbortHandler;
-use crate::handler::DestinationHandler;
 use crate::handler::JobsHandler;
 use crate::handler::RestoreHandler;
 use crate::handler::SearchHandler;
+use crate::handler::SettingsHandler;
 use crate::handler::StatusHandler;
 use crate::http::HttpClientRef;
 use crate::jobmanager::JobManagerRef;
@@ -25,28 +25,25 @@ pub fn start(
     http_client: HttpClientRef,
 ) {
     let mut mount = Mount::new();
+    mount.mount("/api/v2/settings", SettingsHandler::new(config.clone()));
     mount.mount(
-        "/api/v1/destination",
-        DestinationHandler::new(config.clone()),
-    );
-    mount.mount(
-        "/api/v1/restore",
+        "/api/v2/restore",
         RestoreHandler::new(config.clone(), job_manager.clone(), http_client.clone()),
     );
     mount.mount(
-        "/api/v1/abort",
+        "/api/v2/abort",
         AbortHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v1/status",
+        "/api/v2/status",
         StatusHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v1/jobs",
+        "/api/v2/jobs",
         JobsHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v1/search",
+        "/api/v2/search",
         SearchHandler::new(config.clone(), path_manager.clone()),
     );
     mount.mount("/static", Static::new("public/static"));

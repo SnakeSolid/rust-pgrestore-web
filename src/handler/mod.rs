@@ -1,5 +1,5 @@
 mod abort;
-mod destination;
+mod settings;
 mod error;
 mod jobs;
 mod restore;
@@ -8,7 +8,7 @@ mod status;
 mod util;
 
 pub use self::abort::AbortHandler;
-pub use self::destination::DestinationHandler;
+pub use self::settings::SettingsHandler;
 pub use self::error::HandlerError;
 pub use self::error::HandlerResult;
 pub use self::jobs::JobsHandler;

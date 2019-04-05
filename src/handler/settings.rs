@@ -6,20 +6,21 @@ use iron::Request as IromRequest;
 use iron::Response as IromResponse;
 
 #[derive(Debug)]
-pub struct DestinationHandler {
+pub struct SettingsHandler {
     config: ConfigRef,
 }
 
-impl DestinationHandler {
-    pub fn new(config: ConfigRef) -> DestinationHandler {
-        DestinationHandler { config }
+impl SettingsHandler {
+    pub fn new(config: ConfigRef) -> SettingsHandler {
+        SettingsHandler { config }
     }
 }
 
-impl Handler for DestinationHandler {
+impl Handler for SettingsHandler {
     fn handle(&self, _req: &mut IromRequest) -> IronResult<IromResponse> {
         handle_empty(move || {
-            let mut result = Vec::new();
+            let indexes_available = self.config.indexes_path().is_some();
+            let mut destinations = Vec::new();
 
             for (index, destination) in self.config.destinations().iter().enumerate() {
                 let name = format!(
@@ -30,12 +31,21 @@ impl Handler for DestinationHandler {
                 );
                 let destination = Destination::new(index, &name);
 
-                result.push(destination);
+                destinations.push(destination);
             }
 
-            Ok(result)
+            Ok(Response {
+                indexes_available,
+                destinations,
+            })
         })
     }
+}
+
+#[derive(Debug, Serialize)]
+struct Response {
+    indexes_available: bool,
+    destinations: Vec<Destination>,
 }
 
 #[derive(Debug, Clone, Serialize)]

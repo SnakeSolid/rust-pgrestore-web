@@ -200,13 +200,14 @@ impl Worker {
             self.execute_step(jobid, || self.cleanup_schemas(jobid, full_schemas))?;
         }
 
+        // Create empty schema's before restoring.
+        self.execute_step(jobid, || self.create_schemas(jobid, table_schemas))?;
+
         // Restore schema's related to required tables before restoring table.
         if restore_schema {
             for name in table_schemas {
                 self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
             }
-        } else {
-            self.execute_step(jobid, || self.create_schemas(jobid, table_schemas))?;
         }
 
         // Create empty schema's in database.
@@ -228,22 +229,40 @@ impl Worker {
 
         // Restore indexes for all table.
         if restore_indexes {
-            if let Some(indexes_path) = self.config.indexes_path() {
-                let indexes = index::read_indexes(indexes_path, &tables)?;
-
-                for indexe in indexes {
-                    self.execute_step(jobid, || {
-                        command.restore_index(indexe.schema(), indexe.name(), &backup_path)
-                    })?;
-                }
-            } else {
-                return Err(WorkerError::new(
-                    "Indexes path not defined in configuration.",
-                ));
-            }
+            self.execute_step(jobid, || {
+                self.restore_indexes(jobid, &command, tables, backup_path)
+            })?;
         }
 
         self.set_complete(jobid, true)
+    }
+
+    fn restore_indexes(
+        &self,
+        jobid: usize,
+        command: &WorkerCommand,
+        tables: &HashSet<TableDescription>,
+        path: &Path,
+    ) -> WorkerResult<CommandStatus> {
+        self.job_manager
+            .set_stage(jobid, "Creating indexes")
+            .map_err(WorkerError::set_stage_error)?;
+
+        if let Some(indexes_path) = self.config.indexes_path() {
+            let indexes = index::read_indexes(indexes_path, tables)?;
+
+            for indexe in indexes {
+                self.execute_step(jobid, || {
+                    command.restore_index(indexe.schema(), indexe.name(), path)
+                })?;
+            }
+
+            Ok(CommandStatus::Success)
+        } else {
+            Err(WorkerError::new(
+                "Indexes path not defined in configuration.",
+            ))
+        }
     }
 
     fn create_schemas(
@@ -376,6 +395,7 @@ impl Worker {
                 Err(WorkerError::new("Job failed"))
             }
             Err(err) => {
+                self.write_error(jobid, format_args!("{}", err))?;
                 self.set_complete(jobid, false)?;
 
                 Err(err)
