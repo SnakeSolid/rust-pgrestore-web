@@ -7,9 +7,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 	const DATABASE_CREATE = "Create";
 	const DATABASE_DROPANDCREATE = "DropAndCreate";
 	const RESTORE_FULL = "Full";
-	const RESTORE_SCHEMA_ONLY = "SchemaOnly";
-	const RESTORE_SCHEMA_DATA = "SchemaData";
-	const RESTORE_TABLES = "Tables";
+	const RESTORE_PARTIAL = "Partial";
 
 	const EXTRACT_TABLES_RES = [
 		/insert\s+into\s+(\w+\.\w+)\b/gi,
@@ -27,6 +25,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 	const Restore = function(params) {
 		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
+		this.isIndexesVisible = params.isIndexesVisible;
 
 		this.backup.subscribe(this.inferDatabaseName.bind(this));
 
@@ -36,8 +35,9 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		this.databaseName = ko.observable("");
 		this.database = ko.observable(DATABASE_CREATE);
 		this.restore = ko.observable(RESTORE_FULL);
-		this.schemas = ko.observable("");
-		this.tables = ko.observable("");
+		this.objects = ko.observable("");
+		this.isRestoreSchema = ko.observable(false);
+		this.isRestoreIndexes = ko.observable(params.isIndexesVisible());
 		this.ignoreErrors = ko.observable(false);
 		this.parseSchemaVisible = ko.observable(false);
 		this.parseTablesVisible = ko.observable(false);
@@ -65,32 +65,16 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 			return this.databaseName().length === 0;
 		}, this);
 
-		this.isRestoreSchemasInvalid = ko.pureComputed(function() {
-			return this.isRestoreSchemas() && !WORDS_RE.test(this.schemas());
-		}, this);
-
-		this.isRestoreTablesInvalid = ko.pureComputed(function() {
-			return this.isRestoreTables() && !WORDS_RE.test(this.tables());
+		this.isRestoreInvalid = ko.pureComputed(function() {
+			return this.isRestorePartial() && !WORDS_RE.test(this.objects());
 		}, this);
 
 		this.isRestoreFull = ko.pureComputed(function() {
 			return this.restore() === RESTORE_FULL;
 		}, this);
 
-		this.isRestoreSchemaOnly = ko.pureComputed(function() {
-			return this.restore() === RESTORE_SCHEMA_ONLY;
-		}, this);
-
-		this.isRestoreSchemaData = ko.pureComputed(function() {
-			return this.restore() === RESTORE_SCHEMA_DATA;
-		}, this);
-
-		this.isRestoreSchemas = ko.pureComputed(function() {
-			return this.isRestoreSchemaOnly() || this.isRestoreSchemaData();
-		}, this);
-
-		this.isRestoreTables = ko.pureComputed(function() {
-			return this.restore() === RESTORE_TABLES;
+		this.isRestorePartial = ko.pureComputed(function() {
+			return this.restore() === RESTORE_PARTIAL;
 		}, this);
 
 		this.isFormInvalid = ko.pureComputed(function() {
@@ -98,14 +82,13 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 				this.isDestinationInvalid() ||
 				this.isBackupPathInvalid() ||
 				this.isDatabaseNameInvalid() ||
-				this.isRestoreSchemasInvalid() ||
-				this.isRestoreTablesInvalid()
+				this.isRestoreInvalid()
 			);
 		}, this);
 
 		this.schemaCallback = function(text) {
-			this.restore(RESTORE_SCHEMA);
-			this.schemas(
+			this.restore(RESTORE_OBJECTS);
+			this.objects(
 				this.parseSchema(text.toLowerCase())
 					.sort()
 					.join(", ")
@@ -113,8 +96,8 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		}.bind(this);
 
 		this.tablesCallback = function(text) {
-			this.restore(RESTORE_TABLES);
-			this.tables(
+			this.restore(RESTORE_OBJECTS);
+			this.objects(
 				this.parseTables(text.toLowerCase())
 					.sort()
 					.join(", ")
@@ -190,21 +173,13 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 
 		if (this.isRestoreFull()) {
 			result.type = RESTORE_FULL;
-		} else if (this.isRestoreSchemaOnly()) {
-			result.type = RESTORE_SCHEMA_ONLY;
-			result.schema = this.schemas()
+		} else if (this.isRestorePartial()) {
+			result.type = RESTORE_PARTIAL;
+			result.objects = this.objects()
 				.split(SEPARATORS_RE)
 				.filter(nonEmptyString);
-		} else if (this.isRestoreSchemaData()) {
-			result.type = RESTORE_SCHEMA_DATA;
-			result.schema = this.schemas()
-				.split(SEPARATORS_RE)
-				.filter(nonEmptyString);
-		} else if (this.isRestoreTables()) {
-			result.type = RESTORE_TABLES;
-			result.tables = this.tables()
-				.split(SEPARATORS_RE)
-				.filter(nonEmptyString);
+			result.restore_schema = this.isRestoreSchema();
+			result.restore_indexes = this.isRestoreIndexes();
 		}
 
 		return result;
@@ -212,7 +187,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 
 	Restore.prototype.restoreDatabase = function() {
 		reqwest({
-			url: "/api/v1/restore",
+			url: "/api/v2/restore",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",

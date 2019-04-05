@@ -12,6 +12,7 @@ define(["knockout", "reqwest", "components", "handlers"], function(ko, reqwest, 
 		this.currentJobid = ko.observable();
 		this.backupSearchResult = ko.observable("");
 		this.destinations = ko.observableArray();
+		this.isIndexesAvailable = ko.observable(false);
 
 		this.isSearchVisible = ko.pureComputed(function() {
 			return this.currentPage() === PAGE_SEARCH;
@@ -38,12 +39,12 @@ define(["knockout", "reqwest", "components", "handlers"], function(ko, reqwest, 
 			this.currentPage(PAGE_RESTORE);
 		}.bind(this);
 
-		this.showJStatusCallback = function(jobid) {
+		this.showStatusCallback = function(jobid) {
 			this.currentJobid(jobid);
 			this.currentPage(PAGE_STATUS);
 		}.bind(this);
 
-		this.loadDestinations();
+		this.loadSettings();
 	};
 
 	Application.prototype.setSearchPage = function() {
@@ -66,16 +67,17 @@ define(["knockout", "reqwest", "components", "handlers"], function(ko, reqwest, 
 		this.currentPage(PAGE_SETTINGS);
 	};
 
-	Application.prototype.loadDestinations = function() {
+	Application.prototype.loadSettings = function() {
 		reqwest({
-			url: "/api/v1/destination",
+			url: "/api/v2/settings",
 			type: "json",
 			method: "POST",
 		})
 			.then(
 				function(resp) {
 					if (resp.success) {
-						this.destinations(resp.result);
+						this.isIndexesAvailable(resp.result.indexes_available);
+						this.destinations(resp.result.destinations);
 					} else {
 						console.error(resp.message);
 					}

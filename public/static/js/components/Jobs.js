@@ -77,7 +77,7 @@ define(["knockout", "reqwest", "moment"], function(ko, reqwest, moment) {
 	Jobs.prototype.updateJobs = function() {
 		const self = this;
 		const res = reqwest({
-			url: "/api/v1/jobs",
+			url: "/api/v2/jobs",
 			type: "json",
 			method: "POST",
 		})

@@ -142,55 +142,36 @@
       <div class="field">
         <div class="ui radio checkbox">
           <input
-            id="restore_schema_only"
+            id="restore_objects"
             type="radio"
             name="restore"
-            value="SchemaOnly"
+            value="Partial"
             data-bind="checked: restore"
             tabindex="0"
             class="hidden"
           />
-          <label for="restore_schema_only">schema's only</label>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="ui radio checkbox">
-          <input
-            id="restore_schema_data"
-            type="radio"
-            name="restore"
-            value="SchemaData"
-            data-bind="checked: restore"
-            tabindex="0"
-            class="hidden"
-          />
-          <label for="restore_schema_data">schema's and data</label>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="ui radio checkbox">
-          <input
-            id="restore_tables"
-            type="radio"
-            name="restore"
-            value="Tables"
-            data-bind="checked: restore"
-            tabindex="0"
-            class="hidden"
-          />
-          <label for="restore_tables">tables only</label>
+          <label for="restore_objects">particular objects</label>
         </div>
       </div>
     </div>
 
-    <div class="field" data-bind="visible: isRestoreSchemas, css: { error: isRestoreSchemasInvalid }">
-      <label>Schema names:</label> <input type="text" data-bind="textInput: schemas" placeholder="schema names" />
+    <div class="field" data-bind="visible: isRestorePartial, css: { error: isRestoreInvalid }">
+      <label>Comma separated schema names or full table names:</label>
+      <textarea rows="2" placeholder="schema, schema.table" data-bind="textInput: objects"></textarea>
     </div>
 
-    <div class="field" data-bind="visible: isRestoreTables, css: { error: isRestoreTablesInvalid }">
-      <label>Full table names (with schema part):</label> <textarea rows="2" data-bind="textInput: tables"></textarea>
+    <div class="inline field" data-bind="visible: isRestorePartial">
+      <div class="ui checkbox">
+        <input id="restore_schema" type="checkbox" data-bind="checked: isRestoreSchema" tabindex="1" class="hidden" />
+        <label for="restore_schema">Restore empty schema's before table (only if schema does not exists)</label>
+      </div>
+    </div>
+
+    <div class="inline field" data-bind="visible: isRestorePartial">
+      <div class="ui checkbox">
+        <input id="restore_index" type="checkbox" data-bind="checked: isRestoreIndexes" tabindex="2" class="hidden" />
+        <label for="restore_index">Restore indexes for every table</label>
+      </div>
     </div>
 
     <div class="inline field">

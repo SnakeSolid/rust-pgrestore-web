@@ -47,13 +47,17 @@
 
         <div data-bind="visible: isRestoreVisible">
           <ko-restore
-            params="destinations: destinations, backup: backupSearchResult, restoreCallback: showJStatusCallback"
+            params="
+            destinations: destinations,
+            backup: backupSearchResult,
+            restoreCallback: showStatusCallback,
+            isIndexesVisible: isIndexesAvailable"
           ></ko-restore>
         </div>
 
         <div data-bind="visible: isStatusVisible"><ko-status params="jobid: currentJobid"></ko-status></div>
 
-        <div data-bind="visible: isJobsVisible"><ko-jobs params="callback: showJStatusCallback"></ko-jobs></div>
+        <div data-bind="visible: isJobsVisible"><ko-jobs params="callback: showStatusCallback"></ko-jobs></div>
 
         <div data-bind="visible: isSettingsVisible">
           <ko-settings params="destinations: destinations"></ko-settings>
