@@ -14,6 +14,10 @@ pub fn validate(config: ConfigRef) -> ConfigResult<()> {
     validate_file(config.commands().dropdb_path(), "dropdb")?;
     validate_file(config.commands().pgrestore_path(), "pgrestore")?;
 
+    if let Some(indexes_path) = config.indexes_path() {
+        validate_file(indexes_path, "indexes_path")?;
+    }
+
     Ok(())
 }
 
