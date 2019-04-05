@@ -15,6 +15,7 @@ pub type ConfigRef = Arc<Config>;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     max_jobs: usize,
+    indexes_path: Option<String>,
     joblogs_path: String,
     restore_jobs: usize,
     templates: TemplateConfig,
@@ -27,6 +28,10 @@ pub struct Config {
 impl Config {
     pub fn max_jobs(&self) -> usize {
         self.max_jobs
+    }
+
+    pub fn indexes_path(&self) -> Option<&String> {
+        self.indexes_path.as_ref()
     }
 
     pub fn joblogs_path(&self) -> &str {

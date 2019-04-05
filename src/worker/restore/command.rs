@@ -247,7 +247,7 @@ impl<'a> WorkerCommand<'a> {
     }
 
     pub fn restore_table(
-        &mut self,
+        &self,
         schema: &str,
         table: &str,
         backup_path: &Path,
@@ -283,6 +283,50 @@ impl<'a> WorkerCommand<'a> {
             .arg(schema)
             .arg("--table")
             .arg(table)
+            .arg("--no-owner")
+            .arg("--no-privileges")
+            .arg(backup_path);
+
+        self.wait_command(command)
+    }
+
+    pub fn restore_index(
+        &self,
+        schema: &str,
+        index: &str,
+        backup_path: &Path,
+    ) -> WorkerResult<CommandStatus> {
+        info!(
+            "Restoring index {}.{} to {} from {}",
+            schema,
+            index,
+            self.settings.database_name(),
+            backup_path.display(),
+        );
+
+        self.settings
+            .job_manager()
+            .set_stage(self.jobid, &format!("Restore index {}.{}", schema, index))
+            .map_err(WorkerError::set_stage_error)?;
+
+        let mut command = Command::new(self.settings.pgrestore_path());
+
+        command
+            .env_clear()
+            .env("PGPASSWORD", self.settings.password())
+            .arg("--verbose")
+            .arg("--host")
+            .arg(self.settings.host())
+            .arg("--port")
+            .arg(format!("{}", self.settings.port()))
+            .arg("--username")
+            .arg(self.settings.role())
+            .arg("--dbname")
+            .arg(&self.settings.database_name())
+            .arg("--schema")
+            .arg(schema)
+            .arg("--index")
+            .arg(index)
             .arg("--no-owner")
             .arg("--no-privileges")
             .arg(backup_path);

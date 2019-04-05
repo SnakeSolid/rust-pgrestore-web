@@ -3,10 +3,12 @@ mod error;
 pub use self::error::DatabaseError;
 pub use self::error::DatabaseResult;
 
+use super::TableDescription;
 use postgres::params::ConnectParams;
 use postgres::params::Host;
 use postgres::Connection;
 use postgres::TlsMode;
+use std::collections::HashSet;
 
 #[derive(Debug)]
 pub struct PostgreSQL {
@@ -28,7 +30,7 @@ impl PostgreSQL {
         }
     }
 
-    pub fn drop_schemas(&self, schemas: &[String]) -> DatabaseResult<()> {
+    pub fn drop_schemas(&self, schemas: &HashSet<String>) -> DatabaseResult<()> {
         let connection = self.connect()?;
 
         for schema in schemas {
@@ -48,7 +50,7 @@ impl PostgreSQL {
         Ok(())
     }
 
-    pub fn create_schemas(&self, schemas: &[String]) -> DatabaseResult<()> {
+    pub fn create_schemas(&self, schemas: &HashSet<String>) -> DatabaseResult<()> {
         let connection = self.connect()?;
 
         for schema in schemas {
@@ -65,10 +67,13 @@ impl PostgreSQL {
         Ok(())
     }
 
-    pub fn drop_tables(&self, tables: &[(String, String)]) -> DatabaseResult<()> {
+    pub fn drop_tables(&self, tables: &HashSet<TableDescription>) -> DatabaseResult<()> {
         let connection = self.connect()?;
 
-        for (schema_name, table_name) in tables {
+        for table in tables {
+            let schema_name = table.schema();
+            let table_name = table.name();
+
             debug!("Create table: {}.{}", schema_name, table_name);
 
             // Escape double quotes from schema and table names

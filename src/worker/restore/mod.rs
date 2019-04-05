@@ -1,5 +1,7 @@
 mod command;
+mod entity;
 mod error;
+mod index;
 mod postgres;
 
 pub use self::error::WorkerError;
@@ -10,6 +12,9 @@ pub use self::postgres::PostgreSQL;
 use self::command::CommandStatus;
 use self::command::WorkerCommand;
 use self::command::WorkerSettings;
+use self::entity::EntityList;
+use self::entity::IndexDescription;
+use self::entity::TableDescription;
 use crate::config::ConfigRef;
 use crate::config::Destination;
 use crate::http::HttpClientRef;
@@ -64,66 +69,26 @@ impl Worker {
         })
     }
 
-    pub fn restore_file_schema_only(
+    pub fn restore_file_partial(
         self,
         jobid: usize,
         backup_path: &Path,
-        schema: &[String],
+        objects: &[String],
+        restore_schema: bool,
+        restore_indexes: bool,
         drop_database: bool,
         create_database: bool,
     ) -> WorkerResult<()> {
         let backup_path = backup_path.to_path_buf();
-        let schema = schema.to_owned();
+        let objects = objects.to_owned();
 
         self.do_async(jobid, move |worker| {
-            worker.execute_backup_schema_only(
+            worker.execute_backup_partial(
                 jobid,
                 backup_path.as_ref(),
-                &schema,
-                drop_database,
-                create_database,
-            )
-        })
-    }
-
-    pub fn restore_file_schema_data(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        schema: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let backup_path = backup_path.to_path_buf();
-        let schema = schema.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            worker.execute_backup_schema_data(
-                jobid,
-                backup_path.as_ref(),
-                &schema,
-                drop_database,
-                create_database,
-            )
-        })
-    }
-
-    pub fn restore_file_tables(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        tables: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let backup_path = backup_path.to_path_buf();
-        let tables = tables.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            worker.execute_backup_tables(
-                jobid,
-                backup_path.as_ref(),
-                &tables,
+                &objects,
+                restore_schema,
+                restore_indexes,
                 drop_database,
                 create_database,
             )
@@ -147,75 +112,29 @@ impl Worker {
         })
     }
 
-    pub fn restore_url_schema_only(
+    pub fn restore_url_partial(
         self,
         jobid: usize,
         url: &str,
         http_client: HttpClientRef,
-        schema: &[String],
+        objects: &[String],
+        restore_schema: bool,
+        restore_indexes: bool,
         drop_database: bool,
         create_database: bool,
     ) -> WorkerResult<()> {
         let url = url.to_string();
-        let schema = schema.to_owned();
+        let objects = objects.to_owned();
 
         self.do_async(jobid, move |worker| {
             let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
 
-            worker.execute_backup_schema_only(
+            worker.execute_backup_partial(
                 jobid,
                 backup_path.as_ref(),
-                &schema,
-                drop_database,
-                create_database,
-            )
-        })
-    }
-
-    pub fn restore_url_schema_data(
-        self,
-        jobid: usize,
-        url: &str,
-        http_client: HttpClientRef,
-        schema: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let url = url.to_string();
-        let schema = schema.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
-
-            worker.execute_backup_schema_data(
-                jobid,
-                backup_path.as_ref(),
-                &schema,
-                drop_database,
-                create_database,
-            )
-        })
-    }
-
-    pub fn restore_url_tables(
-        self,
-        jobid: usize,
-        url: &str,
-        http_client: HttpClientRef,
-        tables: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let url = url.to_string();
-        let tables = tables.to_owned();
-
-        self.do_async(jobid, move |worker| {
-            let backup_path = worker.execute_download(jobid, || http_client.download(&url))?;
-
-            worker.execute_backup_tables(
-                jobid,
-                backup_path.as_ref(),
-                &tables,
+                &objects,
+                restore_schema,
+                restore_indexes,
                 drop_database,
                 create_database,
             )
@@ -250,11 +169,13 @@ impl Worker {
         self.set_complete(jobid, true)
     }
 
-    fn execute_backup_schema_only(
+    fn execute_backup_partial(
         self,
         jobid: usize,
         backup_path: &Path,
-        schemas: &[String],
+        objects: &[String],
+        restore_schema: bool,
+        restore_indexes: bool,
         drop_database: bool,
         create_database: bool,
     ) -> WorkerResult<()> {
@@ -266,57 +187,70 @@ impl Worker {
             self.execute_step(jobid, || command.drop_database())?;
         }
 
+        let entities = EntityList::parse(objects);
+        let full_schemas = entities.full_schemas();
+        let table_schemas = entities.table_schemas();
+        let tables = entities.tables();
+
         if create_database {
             let template = self.config.templates().partial();
 
             self.execute_step(jobid, || command.create_database(template))?;
         } else {
-            self.execute_step(jobid, || self.cleanup_schemas(jobid, schemas))?;
+            self.execute_step(jobid, || self.cleanup_schemas(jobid, full_schemas))?;
         }
 
-        self.execute_step(jobid, || self.create_schemas(jobid, schemas))?;
+        // Restore schema's related to required tables before restoring table.
+        if restore_schema {
+            for name in table_schemas {
+                self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
+            }
+        } else {
+            self.execute_step(jobid, || self.create_schemas(jobid, table_schemas))?;
+        }
 
-        for name in schemas {
-            self.execute_step_soft(jobid, || command.restore_schema_only(name, &backup_path))?;
+        // Create empty schema's in database.
+        self.execute_step(jobid, || self.create_schemas(jobid, full_schemas))?;
+
+        // Restore
+        for name in full_schemas {
+            self.execute_step(jobid, || command.restore_schema_data(name, &backup_path))?;
+        }
+
+        // Drop required table to make sure that restored columns will be the same as in backup.
+        self.cleanup_tables(jobid, tables)?;
+
+        for table in tables {
+            self.execute_step(jobid, || {
+                command.restore_table(table.schema(), table.name(), &backup_path)
+            })?;
+        }
+
+        // Restore indexes for all table.
+        if restore_indexes {
+            if let Some(indexes_path) = self.config.indexes_path() {
+                let indexes = index::read_indexes(indexes_path, &tables)?;
+
+                for indexe in indexes {
+                    self.execute_step(jobid, || {
+                        command.restore_index(indexe.schema(), indexe.name(), &backup_path)
+                    })?;
+                }
+            } else {
+                return Err(WorkerError::new(
+                    "Indexes path not defined in configuration.",
+                ));
+            }
         }
 
         self.set_complete(jobid, true)
     }
 
-    fn execute_backup_schema_data(
-        self,
+    fn create_schemas(
+        &self,
         jobid: usize,
-        backup_path: &Path,
-        schemas: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let command = WorkerCommand::new(jobid, &self);
-
-        self.check_backup_path(jobid, &backup_path)?;
-
-        if drop_database {
-            self.execute_step(jobid, || command.drop_database())?;
-        }
-
-        if create_database {
-            let template = self.config.templates().partial();
-
-            self.execute_step(jobid, || command.create_database(template))?;
-        } else {
-            self.execute_step(jobid, || self.cleanup_schemas(jobid, schemas))?;
-        }
-
-        self.execute_step(jobid, || self.create_schemas(jobid, schemas))?;
-
-        for name in schemas {
-            self.execute_step_soft(jobid, || command.restore_schema_data(name, &backup_path))?;
-        }
-
-        self.set_complete(jobid, true)
-    }
-
-    fn create_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<CommandStatus> {
+        schemas: &HashSet<String>,
+    ) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
             self.destination.port(),
@@ -336,7 +270,11 @@ impl Worker {
         Ok(CommandStatus::Success)
     }
 
-    fn cleanup_schemas(&self, jobid: usize, schemas: &[String]) -> WorkerResult<CommandStatus> {
+    fn cleanup_schemas(
+        &self,
+        jobid: usize,
+        schemas: &HashSet<String>,
+    ) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
             self.destination.port(),
@@ -356,47 +294,10 @@ impl Worker {
         Ok(CommandStatus::Success)
     }
 
-    fn execute_backup_tables(
-        self,
-        jobid: usize,
-        backup_path: &Path,
-        tables: &[String],
-        drop_database: bool,
-        create_database: bool,
-    ) -> WorkerResult<()> {
-        let mut command = WorkerCommand::new(jobid, &self);
-
-        self.check_backup_path(jobid, &backup_path)?;
-
-        if drop_database {
-            self.execute_step(jobid, || command.drop_database())?;
-        }
-
-        let table_names = self.split_table_names(&tables);
-
-        if create_database {
-            let template = self.config.templates().partial();
-
-            self.execute_step(jobid, || command.create_database(template))?;
-        } else {
-            self.execute_step(jobid, || self.cleanup_tables(jobid, &table_names))?;
-        }
-
-        let schemas = self.collect_schema_names(&tables);
-
-        self.execute_step(jobid, || self.create_schemas(jobid, &schemas))?;
-
-        for (schema, table) in &table_names {
-            self.execute_step_soft(jobid, || command.restore_table(schema, table, &backup_path))?;
-        }
-
-        self.set_complete(jobid, true)
-    }
-
     fn cleanup_tables(
         &self,
         jobid: usize,
-        tables: &[(String, String)],
+        tables: &HashSet<TableDescription>,
     ) -> WorkerResult<CommandStatus> {
         let postgres = PostgreSQL::new(
             self.destination.host(),
@@ -530,30 +431,6 @@ impl Worker {
         self.job_manager
             .set_complete(jobid, complete)
             .map_err(WorkerError::set_status_error)
-    }
-
-    fn collect_schema_names(&self, tables: &[String]) -> Vec<String> {
-        let mut result = HashSet::new();
-
-        for table in tables {
-            if let Some(index) = table.find('.') {
-                result.insert(table[..index].into());
-            }
-        }
-
-        result.into_iter().collect()
-    }
-
-    fn split_table_names(&self, tables: &[String]) -> Vec<(String, String)> {
-        let mut result = Vec::new();
-
-        for table in tables {
-            if let Some(index) = table.find('.') {
-                result.push((table[..index].into(), table[index + 1..].into()));
-            }
-        }
-
-        result
     }
 
     fn do_async<F>(self, jobid: usize, callback: F) -> WorkerResult<()>

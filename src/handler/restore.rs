@@ -74,29 +74,20 @@ impl Handler for RestoreHandler {
                 (RestoreType::Full, Backup::Path { path }) => worker
                     .restore_file_full(job_id, path.as_ref(), drop_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::SchemaOnly { schema }, Backup::Path { path }) => worker
-                    .restore_file_schema_only(
+                (
+                    RestoreType::Partial {
+                        objects,
+                        restore_schema,
+                        restore_indexes,
+                    },
+                    Backup::Path { path },
+                ) => worker
+                    .restore_file_partial(
                         job_id,
                         path.as_ref(),
-                        &schema,
-                        drop_database,
-                        create_database,
-                    )
-                    .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::SchemaData { schema }, Backup::Path { path }) => worker
-                    .restore_file_schema_data(
-                        job_id,
-                        path.as_ref(),
-                        &schema,
-                        drop_database,
-                        create_database,
-                    )
-                    .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::Tables { tables }, Backup::Path { path }) => worker
-                    .restore_file_tables(
-                        job_id,
-                        path.as_ref(),
-                        &tables,
+                        &objects,
+                        restore_schema,
+                        restore_indexes,
                         drop_database,
                         create_database,
                     )
@@ -110,32 +101,21 @@ impl Handler for RestoreHandler {
                         create_database,
                     )
                     .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::SchemaOnly { schema }, Backup::Url { url }) => worker
-                    .restore_url_schema_only(
+                (
+                    RestoreType::Partial {
+                        objects,
+                        restore_schema,
+                        restore_indexes,
+                    },
+                    Backup::Url { url },
+                ) => worker
+                    .restore_url_partial(
                         job_id,
                         &url,
                         self.http_client.clone(),
-                        &schema,
-                        drop_database,
-                        create_database,
-                    )
-                    .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::SchemaData { schema }, Backup::Url { url }) => worker
-                    .restore_url_schema_data(
-                        job_id,
-                        &url,
-                        self.http_client.clone(),
-                        &schema,
-                        drop_database,
-                        create_database,
-                    )
-                    .map_err(|err| HandlerError::new(err.message()))?,
-                (RestoreType::Tables { tables }, Backup::Url { url }) => worker
-                    .restore_url_tables(
-                        job_id,
-                        &url,
-                        self.http_client.clone(),
-                        &tables,
+                        &objects,
+                        restore_schema,
+                        restore_indexes,
                         drop_database,
                         create_database,
                     )
@@ -175,7 +155,9 @@ enum DatabaseType {
 #[derive(Debug, Deserialize)]
 enum RestoreType {
     Full,
-    SchemaOnly { schema: Vec<String> },
-    SchemaData { schema: Vec<String> },
-    Tables { tables: Vec<String> },
+    Partial {
+        objects: Vec<String>,
+        restore_schema: bool,
+        restore_indexes: bool,
+    },
 }
