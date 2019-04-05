@@ -9,7 +9,7 @@ pub fn validate(config: ConfigRef) -> ConfigResult<()> {
     validate_number(config.max_jobs(), "jobs")?;
     validate_dir(config.joblogs_path(), "Jobs log")?;
     validate_number(config.restore_jobs(), "restore jobs")?;
-    validate_dir(config.http_config().download_directory(), "HTTP downloads")?;
+    validate_dir(config.http_client().download_directory(), "HTTP downloads")?;
     validate_file(config.commands().createdb_path(), "createdb")?;
     validate_file(config.commands().dropdb_path(), "dropdb")?;
     validate_file(config.commands().pgrestore_path(), "pgrestore")?;

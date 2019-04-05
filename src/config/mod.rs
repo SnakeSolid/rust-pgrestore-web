@@ -20,7 +20,8 @@ pub struct Config {
     restore_jobs: usize,
     templates: TemplateConfig,
     search_config: SearchConfig,
-    http_config: HttpConfig,
+    http_server: HttpServer,
+    http_client: HttpClient,
     commands: Commands,
     destinations: Vec<Destination>,
 }
@@ -50,8 +51,12 @@ impl Config {
         &self.search_config
     }
 
-    pub fn http_config(&self) -> &HttpConfig {
-        &self.http_config
+    pub fn http_server(&self) -> &HttpServer {
+        &self.http_server
+    }
+
+    pub fn http_client(&self) -> &HttpClient {
+        &self.http_client
     }
 
     pub fn commands(&self) -> &Commands {
@@ -106,7 +111,19 @@ impl SearchConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct HttpConfig {
+pub struct HttpServer {
+    #[serde(default)]
+    cors: Option<Cors>,
+}
+
+impl HttpServer {
+    pub fn cors(&self) -> Option<&Cors> {
+        self.cors.as_ref()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct HttpClient {
     download_directory: String,
     #[serde(default)]
     root_certificates: Vec<String>,
@@ -114,11 +131,9 @@ pub struct HttpConfig {
     accept_invalid_hostnames: bool,
     #[serde(default)]
     accept_invalid_certs: bool,
-    #[serde(default)]
-    cors: Option<Cors>,
 }
 
-impl HttpConfig {
+impl HttpClient {
     pub fn download_directory(&self) -> &str {
         &self.download_directory
     }
@@ -133,10 +148,6 @@ impl HttpConfig {
 
     pub fn accept_invalid_certs(&self) -> bool {
         self.accept_invalid_certs
-    }
-
-    pub fn cors(&self) -> Option<&Cors> {
-        self.cors.as_ref()
     }
 }
 

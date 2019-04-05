@@ -45,7 +45,7 @@ impl HttpClient {
     fn create(config: ConfigRef) -> HttpClientResult<HttpClient> {
         let mut builder = Client::builder().gzip(true);;
 
-        for cetrificate_path in config.http_config().root_certificates() {
+        for cetrificate_path in config.http_client().root_certificates() {
             debug!("Loading certificate {}", cetrificate_path);
 
             let mut buffer = Vec::new();
@@ -61,19 +61,19 @@ impl HttpClient {
             builder = builder.add_root_certificate(certificate);
         }
 
-        if config.http_config().accept_invalid_hostnames() {
+        if config.http_client().accept_invalid_hostnames() {
             debug!("Accept invalid host names");
 
             builder = builder.danger_accept_invalid_hostnames(true);
         }
 
-        if config.http_config().accept_invalid_certs() {
+        if config.http_client().accept_invalid_certs() {
             debug!("Accept invalid certificates");
 
             builder = builder.danger_accept_invalid_certs(true);
         }
 
-        let download_directory = config.http_config().download_directory().into();
+        let download_directory = config.http_client().download_directory().into();
 
         Ok(HttpClient {
             config,

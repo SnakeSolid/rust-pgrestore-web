@@ -64,7 +64,7 @@ pub fn start(
 fn make_chain(config: &ConfigRef, mount: Mount) -> Chain {
     let mut chain = Chain::new(mount);
 
-    match config.http_config().cors() {
+    match config.http_server().cors() {
         Some(Cors::AllowAny) => {
             chain.link_around(CorsMiddleware::with_allow_any());
         }
