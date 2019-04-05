@@ -28,6 +28,7 @@ Simple configuration example:
 ```yaml
 ---
 max_jobs: 10 # maximal number of jobs to store results
+indexes_path: "indexes.csv" # optional path to CSV file with table indexes
 joblogs_path: "logs" # directory to store restore jobs output
 restore_jobs: 8 # number of jobs for pg_restore command
 
@@ -68,4 +69,24 @@ destinations: # list of PostgreSQL servers to restore database
     port: 5432
     role: user_two
     password: pass_two
+```
+
+## Indexes File
+
+Parameter `indexes_path` in configuration contains path to indexes file. This file used to match table in backup with
+corresponding indexes. Indexes will be read for every restore operation.
+
+File must contain three columns separated by commas without any headers:
+
+1. schema name;
+2. table name;
+3. index name.
+
+Schema name is the same for table and index. Example of file content:
+
+```csv
+public,table_first,pk_table_first_id
+public,table_first,nx_table_first_name
+public,table_second,pk_table_second_id
+public,table_second,nx_table_second_category
 ```
