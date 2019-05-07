@@ -87,7 +87,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		}, this);
 
 		this.schemaCallback = function(text) {
-			this.restore(RESTORE_OBJECTS);
+			this.restore(RESTORE_PARTIAL);
 			this.objects(
 				this.parseSchema(text.toLowerCase())
 					.sort()
@@ -96,7 +96,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		}.bind(this);
 
 		this.tablesCallback = function(text) {
-			this.restore(RESTORE_OBJECTS);
+			this.restore(RESTORE_PARTIAL);
 			this.objects(
 				this.parseTables(text.toLowerCase())
 					.sort()
@@ -120,30 +120,6 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 
 	Restore.prototype.updateSelectedDestination = function() {
 		this.selectedDestination(Storage.getPreferredDestination());
-	};
-
-	Restore.prototype.setDatabaseExists = function() {
-		this.database(DATABASE_EXISTS);
-	};
-
-	Restore.prototype.setDatabaseCreate = function() {
-		this.database(DATABASE_CREATE);
-	};
-
-	Restore.prototype.setDatabaseDropAndCreate = function() {
-		this.database(DATABASE_DROPANDCREATE);
-	};
-
-	Restore.prototype.setRestoreFull = function() {
-		this.restore(RESTORE_FULL);
-	};
-
-	Restore.prototype.setRestoreSchemas = function() {
-		this.restore(RESTORE_SCHEMA);
-	};
-
-	Restore.prototype.setRestoreTables = function() {
-		this.restore(RESTORE_TABLES);
 	};
 
 	Restore.prototype.inferDatabaseName = function(backupPath) {
