@@ -25,25 +25,25 @@ pub fn start(
     http_client: HttpClientRef,
 ) {
     let mut mount = Mount::new();
-    mount.mount("/api/v2/settings", SettingsHandler::new(config.clone()));
+    mount.mount("/api/v3/settings", SettingsHandler::new(config.clone()));
     mount.mount(
-        "/api/v2/restore",
+        "/api/v3/restore",
         RestoreHandler::new(config.clone(), job_manager.clone(), http_client.clone()),
     );
     mount.mount(
-        "/api/v2/abort",
+        "/api/v3/abort",
         AbortHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v2/status",
+        "/api/v3/status",
         StatusHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v2/jobs",
+        "/api/v3/jobs",
         JobsHandler::new(config.clone(), job_manager.clone()),
     );
     mount.mount(
-        "/api/v2/search",
+        "/api/v3/search",
         SearchHandler::new(config.clone(), path_manager.clone()),
     );
     mount.mount("/static", Static::new("public/static"));

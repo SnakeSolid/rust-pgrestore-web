@@ -4,7 +4,6 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 	const BACKUP_PATH = "Path";
 	const BACKUP_URL = "Url";
 	const DATABASE_EXISTS = "Exists";
-	const DATABASE_CREATE = "Create";
 	const DATABASE_DROPANDCREATE = "DropAndCreate";
 	const RESTORE_FULL = "Full";
 	const RESTORE_PARTIAL = "Partial";
@@ -33,7 +32,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		this.selectedDestination = ko.observable();
 		this.backupType = ko.observable(BACKUP_PATH);
 		this.databaseName = ko.observable("");
-		this.database = ko.observable(DATABASE_CREATE);
+		this.database = ko.observable(DATABASE_DROPANDCREATE);
 		this.restore = ko.observable(RESTORE_FULL);
 		this.objects = ko.observable("");
 		this.isRestoreSchema = ko.observable(false);
@@ -163,7 +162,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 
 	Restore.prototype.restoreDatabase = function() {
 		reqwest({
-			url: "/api/v2/restore",
+			url: "/api/v3/restore",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",

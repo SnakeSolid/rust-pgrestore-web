@@ -53,10 +53,9 @@ impl Handler for RestoreHandler {
                 return Err(HandlerError::new("Database name must not be empty"));
             }
 
-            let (drop_database, create_database) = match request.database {
-                DatabaseType::Exists => (false, false),
-                DatabaseType::Create => (false, true),
-                DatabaseType::DropAndCreate => (true, true),
+            let create_database = match request.database {
+                DatabaseType::Exists => false,
+                DatabaseType::DropAndCreate => true,
             };
             let job_id = self
                 .job_manager
@@ -72,7 +71,7 @@ impl Handler for RestoreHandler {
 
             match (request.restore, request.backup) {
                 (RestoreType::Full, Backup::Path { path }) => worker
-                    .restore_file_full(job_id, path.as_ref(), drop_database, create_database)
+                    .restore_file_full(job_id, path.as_ref(), create_database, create_database)
                     .map_err(|err| HandlerError::new(err.message()))?,
                 (
                     RestoreType::Partial {
@@ -88,7 +87,7 @@ impl Handler for RestoreHandler {
                         &objects,
                         restore_schema,
                         restore_indexes,
-                        drop_database,
+                        create_database,
                         create_database,
                     )
                     .map_err(|err| HandlerError::new(err.message()))?,
@@ -97,7 +96,7 @@ impl Handler for RestoreHandler {
                         job_id,
                         &url,
                         self.http_client.clone(),
-                        drop_database,
+                        create_database,
                         create_database,
                     )
                     .map_err(|err| HandlerError::new(err.message()))?,
@@ -116,7 +115,7 @@ impl Handler for RestoreHandler {
                         &objects,
                         restore_schema,
                         restore_indexes,
-                        drop_database,
+                        create_database,
                         create_database,
                     )
                     .map_err(|err| HandlerError::new(err.message()))?,
@@ -147,7 +146,6 @@ enum Backup {
 #[derive(Debug, Deserialize)]
 enum DatabaseType {
     Exists,
-    Create,
     DropAndCreate,
 }
 

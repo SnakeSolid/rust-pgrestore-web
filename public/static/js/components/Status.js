@@ -111,7 +111,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 
 	Status.prototype.abortJob = function() {
 		reqwest({
-			url: "/api/v2/abort",
+			url: "/api/v3/abort",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",
@@ -137,7 +137,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 
 	Status.prototype.updateStatus = function() {
 		reqwest({
-			url: "/api/v2/status",
+			url: "/api/v3/status",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",

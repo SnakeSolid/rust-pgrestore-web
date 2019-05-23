@@ -21,7 +21,7 @@ define(["knockout", "reqwest"], function(ko, reqwest) {
 
 	Restore.prototype.findBackups = function() {
 		const res = reqwest({
-			url: "/api/v2/search",
+			url: "/api/v3/search",
 			type: "json",
 			method: "POST",
 			contentType: "application/json",

@@ -69,7 +69,7 @@ define(["knockout", "reqwest", "components", "handlers"], function(ko, reqwest, 
 
 	Application.prototype.loadSettings = function() {
 		reqwest({
-			url: "/api/v2/settings",
+			url: "/api/v3/settings",
 			type: "json",
 			method: "POST",
 		})

@@ -115,6 +115,7 @@ impl<'a> WorkerCommand<'a> {
             .arg(format!("{}", self.settings.port()))
             .arg("--username")
             .arg(self.settings.role())
+            .arg("--if-exists")
             .arg(&self.settings.database_name());
 
         self.wait_command(command)
