@@ -55,6 +55,7 @@ impl<'a> WorkerCommand<'a> {
         loop {
             if self.is_aborted()? {
                 child.kill().map_err(WorkerError::kill_command_error)?;
+                child.wait().map_err(WorkerError::wait_command_error)?;
 
                 return Ok(CommandStatus::Aborted);
             }
