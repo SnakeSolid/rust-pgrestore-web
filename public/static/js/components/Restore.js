@@ -30,7 +30,6 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 
 		this.availableDestinations = params.destinations;
 		this.selectedDestination = ko.observable();
-		this.backupType = ko.observable(BACKUP_PATH);
 		this.databaseName = ko.observable("");
 		this.database = ko.observable(DATABASE_DROPANDCREATE);
 		this.restore = ko.observable(RESTORE_FULL);
@@ -43,14 +42,6 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		this.isLoading = ko.observable(false);
 		this.isError = ko.observable(false);
 		this.errorMessage = ko.observable();
-
-		this.isBackupPath = ko.pureComputed(function() {
-			return this.backupType() === BACKUP_PATH;
-		}, this);
-
-		this.isBackupUrl = ko.pureComputed(function() {
-			return this.backupType() === BACKUP_URL;
-		}, this);
 
 		this.isDestinationInvalid = ko.pureComputed(function() {
 			return this.selectedDestination() === undefined;
@@ -103,18 +94,14 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 			);
 		}.bind(this);
 
-		this.backup.subscribe(
-			function(value) {
-				if (value.startsWith("http://") || value.startsWith("https://")) {
-					this.backupType(BACKUP_URL);
-				} else {
-					this.backupType(BACKUP_PATH);
-				}
-			}.bind(this)
-		);
-
 		this.updateSelectedDestination();
 		this.availableDestinations.subscribe(this.updateSelectedDestination);
+	};
+
+	Restore.prototype.isBackupUrl = function() {
+		const backup = this.backup();
+
+		return backup.startsWith("http://") || backup.startsWith("https://");
 	};
 
 	Restore.prototype.updateSelectedDestination = function() {
@@ -132,12 +119,12 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 	Restore.prototype.backupToCall = function() {
 		const result = {};
 
-		if (this.isBackupPath()) {
-			result.type = BACKUP_PATH;
-			result.path = this.backup();
-		} else if (this.isBackupUrl()) {
+		if (this.isBackupUrl()) {
 			result.type = BACKUP_URL;
 			result.url = this.backup();
+		} else {
+			result.type = BACKUP_PATH;
+			result.path = this.backup();
 		}
 
 		return result;
