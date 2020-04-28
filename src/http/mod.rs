@@ -43,7 +43,7 @@ struct HttpClient {
 
 impl HttpClient {
     fn create(config: ConfigRef) -> HttpClientResult<HttpClient> {
-        let mut builder = Client::builder().gzip(true);;
+        let mut builder = Client::builder().gzip(true);
 
         for cetrificate_path in config.http_client().root_certificates() {
             debug!("Loading certificate {}", cetrificate_path);

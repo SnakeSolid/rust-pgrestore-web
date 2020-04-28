@@ -16,11 +16,11 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct WorkerCommand<'a> {
     jobid: usize,
-    settings: &'a WorkerSettings,
+    settings: &'a dyn WorkerSettings,
 }
 
 impl<'a> WorkerCommand<'a> {
-    pub fn new(jobid: usize, settings: &'a WorkerSettings) -> WorkerCommand<'a> {
+    pub fn new(jobid: usize, settings: &'a dyn WorkerSettings) -> WorkerCommand<'a> {
         WorkerCommand { jobid, settings }
     }
 
