@@ -95,8 +95,10 @@
     <div class="four ui buttons">
       <button class="ui primary button" data-bind="click: saveSettings">Save settings</button>
       <button class="ui button" data-bind="click: showExport">Export settings</button>
+      <button class="ui button" data-bind="click: showImport">Import settings</button>
     </div>
   </div>
 
   <ko-export-dialog params="visible: exportVisible"></ko-export-dialog>
+  <ko-import-dialog params="callback: updateSettings, visible: importVisible"></ko-import-dialog>
 </div>

@@ -1,0 +1,24 @@
+<div class="ui dimmer page active" data-bind="css: { active: visible }">
+  <div class="ui modal active" data-bind="css: { active: visible }">
+    <div class="header">Import Settings</div>
+
+    <div class="content">
+      <div class="ui form">
+        <label for="settings_string">Settings string:</label>
+        <div class="field">
+          <textarea id="settings_string" rows="8" data-bind="value: text"></textarea>
+        </div>
+      </div>
+
+      <div class="ui error message" data-bind="visible: isErrorVisible">
+        <div class="header">Error Occurred</div>
+        <p data-bind="text: errorText"></p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="ui positive button" data-bind="click: importClick">Import</div>
+      <div class="ui button" data-bind="click: closeClick">Close</div>
+    </div>
+  </div>
+</div>

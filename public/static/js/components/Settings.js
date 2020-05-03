@@ -8,6 +8,8 @@ define(["knockout", "Storage"], function(ko, Storage) {
 		this.editPathPattern = ko.observable();
 		this.editReplacePattern = ko.observable();
 		this.editChangeCase = ko.observable();
+		this.exportVisible = ko.observable(false);
+		this.importVisible = ko.observable(false);
 
 		this.moveUp = function(item) {
 			const idx = this.namePatterns.indexOf(item);
@@ -49,19 +51,18 @@ define(["knockout", "Storage"], function(ko, Storage) {
 			return item.changeCase === "Lower";
 		}.bind(this);
 
-		this.updateSelectedDestination();
-		this.updateNamePatterns();
+		this.updateSettings = function() {
+			this.updateSelectedDestination();
+			this.namePatterns(Storage.getNamePatterns());
+		}.bind(this);
 
-		this.exportVisible = ko.observable(false);
+		this.updateSettings();
+
 		this.availableDestinations.subscribe(this.updateSelectedDestination);
 	};
 
 	Settings.prototype.updateSelectedDestination = function() {
 		this.selectedDestination(Storage.getPreferredDestination());
-	};
-
-	Settings.prototype.updateNamePatterns = function() {
-		this.namePatterns(Storage.getNamePatterns());
 	};
 
 	Settings.prototype.isMoveUpAllowed = function(index) {
@@ -87,6 +88,10 @@ define(["knockout", "Storage"], function(ko, Storage) {
 
 	Settings.prototype.showExport = function() {
 		this.exportVisible(true);
+	};
+
+	Settings.prototype.showImport = function() {
+		this.importVisible(true);
 	};
 
 	return Settings;

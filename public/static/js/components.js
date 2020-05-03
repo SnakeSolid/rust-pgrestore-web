@@ -35,4 +35,9 @@ define(["knockout"], function(ko) {
 		viewModel: { require: "components/ExportDialog" },
 		template: { require: "text!components/ExportDialog.html" },
 	});
+
+	ko.components.register("ko-import-dialog", {
+		viewModel: { require: "components/ImportDialog" },
+		template: { require: "text!components/ImportDialog.html" },
+	});
 });
