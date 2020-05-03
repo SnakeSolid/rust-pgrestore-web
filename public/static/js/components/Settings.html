@@ -92,6 +92,11 @@
 
     <div class="ui hidden divider"></div>
 
-    <button class="ui primary fluid button" data-bind="click: saveSettings">Save settings</button>
+    <div class="four ui buttons">
+      <button class="ui primary button" data-bind="click: saveSettings">Save settings</button>
+      <button class="ui button" data-bind="click: showExport">Export settings</button>
+    </div>
   </div>
+
+  <ko-export-dialog params="visible: exportVisible"></ko-export-dialog>
 </div>

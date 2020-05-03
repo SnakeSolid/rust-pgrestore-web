@@ -9,11 +9,6 @@ define(["knockout", "Storage"], function(ko, Storage) {
 		this.editReplacePattern = ko.observable();
 		this.editChangeCase = ko.observable();
 
-		this.updateSelectedDestination();
-		this.availableDestinations.subscribe(this.updateSelectedDestination);
-
-		this.updateNamePatterns();
-
 		this.moveUp = function(item) {
 			const idx = this.namePatterns.indexOf(item);
 			const patterns = this.namePatterns();
@@ -53,6 +48,12 @@ define(["knockout", "Storage"], function(ko, Storage) {
 		this.isLowercase = function(item) {
 			return item.changeCase === "Lower";
 		}.bind(this);
+
+		this.updateSelectedDestination();
+		this.updateNamePatterns();
+
+		this.exportVisible = ko.observable(false);
+		this.availableDestinations.subscribe(this.updateSelectedDestination);
 	};
 
 	Settings.prototype.updateSelectedDestination = function() {
@@ -82,6 +83,10 @@ define(["knockout", "Storage"], function(ko, Storage) {
 	Settings.prototype.saveSettings = function() {
 		Storage.setPreferredDestination(this.selectedDestination());
 		Storage.setNamePatterns(this.namePatterns());
+	};
+
+	Settings.prototype.showExport = function() {
+		this.exportVisible(true);
 	};
 
 	return Settings;
