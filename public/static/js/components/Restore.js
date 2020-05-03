@@ -25,9 +25,6 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		this.backup = params.backup;
 		this.restoreCallback = params.restoreCallback;
 		this.isIndexesVisible = params.isIndexesVisible;
-
-		this.backup.subscribe(this.inferDatabaseName.bind(this));
-
 		this.availableDestinations = params.destinations;
 		this.selectedDestination = ko.observable();
 		this.databaseName = ko.observable("");
@@ -95,6 +92,7 @@ define(["knockout", "reqwest", "Storage", "Pattern"], function(ko, reqwest, Stor
 		}.bind(this);
 
 		this.updateSelectedDestination();
+		this.backup.subscribe(this.inferDatabaseName.bind(this));
 		this.availableDestinations.subscribe(this.updateSelectedDestination);
 	};
 
