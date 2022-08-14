@@ -1,6 +1,5 @@
 use super::util::handle_empty;
 use super::HandlerError;
-use crate::config::ConfigRef;
 use crate::jobmanager::JobManagerRef;
 use crate::jobmanager::JobStatus;
 use iron::middleware::Handler;
@@ -10,16 +9,12 @@ use iron::Response as IronResponse;
 
 #[derive(Debug)]
 pub struct JobsHandler {
-    config: ConfigRef,
     job_manager: JobManagerRef,
 }
 
 impl JobsHandler {
-    pub fn new(config: ConfigRef, job_manager: JobManagerRef) -> JobsHandler {
-        JobsHandler {
-            config,
-            job_manager,
-        }
+    pub fn new(job_manager: JobManagerRef) -> JobsHandler {
+        JobsHandler { job_manager }
     }
 }
 

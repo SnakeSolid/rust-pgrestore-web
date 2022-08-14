@@ -1,6 +1,5 @@
 use super::util::handle_request;
 use super::HandlerError;
-use crate::config::ConfigRef;
 use crate::jobmanager::JobManagerRef;
 use iron::middleware::Handler;
 use iron::IronResult;
@@ -9,16 +8,12 @@ use iron::Response as IronResponse;
 
 #[derive(Debug)]
 pub struct AbortHandler {
-    config: ConfigRef,
     job_manager: JobManagerRef,
 }
 
 impl AbortHandler {
-    pub fn new(config: ConfigRef, job_manager: JobManagerRef) -> AbortHandler {
-        AbortHandler {
-            config,
-            job_manager,
-        }
+    pub fn new(job_manager: JobManagerRef) -> AbortHandler {
+        AbortHandler { job_manager }
     }
 }
 

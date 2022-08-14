@@ -1,7 +1,6 @@
 use super::util::handle_request;
 use super::HandlerError;
 use super::HandlerResult;
-use crate::config::ConfigRef;
 use crate::jobmanager::Job;
 use crate::jobmanager::JobManagerRef;
 use crate::jobmanager::JobStatus;
@@ -18,16 +17,12 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct StatusHandler {
-    config: ConfigRef,
     job_manager: JobManagerRef,
 }
 
 impl StatusHandler {
-    pub fn new(config: ConfigRef, job_manager: JobManagerRef) -> StatusHandler {
-        StatusHandler {
-            config,
-            job_manager,
-        }
+    pub fn new(job_manager: JobManagerRef) -> StatusHandler {
+        StatusHandler { job_manager }
     }
 }
 

@@ -136,8 +136,8 @@ struct Request {
     ignore_errors: bool,
 }
 
-#[serde(tag = "type")]
 #[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
 enum Backup {
     Path { path: String },
     Url { url: String },
@@ -149,8 +149,8 @@ enum DatabaseType {
     DropAndCreate,
 }
 
-#[serde(tag = "type")]
 #[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
 enum RestoreType {
     Full,
     Partial {

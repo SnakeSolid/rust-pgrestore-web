@@ -30,22 +30,10 @@ pub fn start(
         "/api/v3/restore",
         RestoreHandler::new(config.clone(), job_manager.clone(), http_client.clone()),
     );
-    mount.mount(
-        "/api/v3/abort",
-        AbortHandler::new(config.clone(), job_manager.clone()),
-    );
-    mount.mount(
-        "/api/v3/status",
-        StatusHandler::new(config.clone(), job_manager.clone()),
-    );
-    mount.mount(
-        "/api/v3/jobs",
-        JobsHandler::new(config.clone(), job_manager.clone()),
-    );
-    mount.mount(
-        "/api/v3/search",
-        SearchHandler::new(config.clone(), path_manager.clone()),
-    );
+    mount.mount("/api/v3/abort", AbortHandler::new(job_manager.clone()));
+    mount.mount("/api/v3/status", StatusHandler::new(job_manager.clone()));
+    mount.mount("/api/v3/jobs", JobsHandler::new(job_manager.clone()));
+    mount.mount("/api/v3/search", SearchHandler::new(path_manager.clone()));
     mount.mount("/static", Static::new("public/static"));
     mount.mount("/", Static::new("public"));
 

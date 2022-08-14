@@ -4,8 +4,8 @@ pub use self::error::HttpClientError;
 pub use self::error::HttpClientResult;
 
 use crate::config::ConfigRef;
+use reqwest::blocking::Client;
 use reqwest::Certificate;
-use reqwest::Client;
 use reqwest::IntoUrl;
 use std::fmt::Display;
 use std::fs;
@@ -35,7 +35,6 @@ impl HttpClientRef {
 
 #[derive(Debug)]
 struct HttpClient {
-    config: ConfigRef,
     client: Client,
     download_directory: PathBuf,
     file_seq_no: usize,
@@ -64,7 +63,7 @@ impl HttpClient {
         if config.http_client().accept_invalid_hostnames() {
             debug!("Accept invalid host names");
 
-            builder = builder.danger_accept_invalid_hostnames(true);
+            builder = builder.danger_accept_invalid_certs(true);
         }
 
         if config.http_client().accept_invalid_certs() {
@@ -76,7 +75,6 @@ impl HttpClient {
         let download_directory = config.http_client().download_directory().into();
 
         Ok(HttpClient {
-            config,
             client: builder.build().map_err(HttpClientError::reqwest_error)?,
             download_directory,
             file_seq_no: 0,

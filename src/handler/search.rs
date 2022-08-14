@@ -1,6 +1,5 @@
 use super::util::handle_request;
 use super::HandlerError;
-use crate::config::ConfigRef;
 use crate::pathmanager::PathManagerRef;
 use iron::middleware::Handler;
 use iron::IronResult;
@@ -9,16 +8,12 @@ use iron::Response as IronResponse;
 
 #[derive(Debug)]
 pub struct SearchHandler {
-    config: ConfigRef,
     path_manager: PathManagerRef,
 }
 
 impl SearchHandler {
-    pub fn new(config: ConfigRef, path_manager: PathManagerRef) -> SearchHandler {
-        SearchHandler {
-            config,
-            path_manager,
-        }
+    pub fn new(path_manager: PathManagerRef) -> SearchHandler {
+        SearchHandler { path_manager }
     }
 }
 

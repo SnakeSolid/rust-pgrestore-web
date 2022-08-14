@@ -1,13 +1,13 @@
 mod error;
 
+use postgres::config::SslMode;
+use postgres::Client;
+use postgres::NoTls;
+
 pub use self::error::DatabaseError;
 pub use self::error::DatabaseResult;
 
 use super::TableDescription;
-use postgres::params::ConnectParams;
-use postgres::params::Host;
-use postgres::Connection;
-use postgres::TlsMode;
 use std::collections::HashSet;
 
 #[derive(Debug)]
@@ -31,7 +31,7 @@ impl PostgreSQL {
     }
 
     pub fn drop_schemas(&self, schemas: &HashSet<String>) -> DatabaseResult<()> {
-        let connection = self.connect()?;
+        let mut connection = self.connect()?;
 
         for schema in schemas {
             debug!("Drop schema {}", schema);
@@ -51,7 +51,7 @@ impl PostgreSQL {
     }
 
     pub fn create_schemas(&self, schemas: &HashSet<String>) -> DatabaseResult<()> {
-        let connection = self.connect()?;
+        let mut connection = self.connect()?;
 
         for schema in schemas {
             debug!("Create schema: {}", schema);
@@ -68,7 +68,7 @@ impl PostgreSQL {
     }
 
     pub fn drop_tables(&self, tables: &HashSet<TableDescription>) -> DatabaseResult<()> {
-        let connection = self.connect()?;
+        let mut connection = self.connect()?;
 
         for table in tables {
             let schema_name = table.schema();
@@ -94,14 +94,15 @@ impl PostgreSQL {
         Ok(())
     }
 
-    fn connect(&self) -> DatabaseResult<Connection> {
-        let password = Some(self.password.as_str()).filter(|w| !w.is_empty());
-        let params = ConnectParams::builder()
+    fn connect(&self) -> DatabaseResult<Client> {
+        Client::configure()
+            .ssl_mode(SslMode::Disable)
+            .host(&self.server)
             .port(self.port)
-            .user(&self.user, password)
-            .database(&self.database)
-            .build(Host::Tcp(self.server.clone()));
-
-        Connection::connect(params, TlsMode::None).map_err(DatabaseError::connection_error)
+            .user(&self.user)
+            .password(&self.password)
+            .dbname(&self.database)
+            .connect(NoTls)
+            .map_err(DatabaseError::connection_error)
     }
 }

@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
-use time;
+use time::OffsetDateTime;
 
 #[derive(Debug)]
 pub struct Job {
@@ -15,7 +15,7 @@ pub struct Job {
 
 impl Job {
     pub fn new(database_name: &str, stdout_path: &Path, stderr_path: &Path) -> Job {
-        let created = time::get_time().sec;
+        let created = OffsetDateTime::now_utc().unix_timestamp();
         let modified = created;
 
         Job {
@@ -30,12 +30,12 @@ impl Job {
     }
 
     pub fn set_status(&mut self, status: JobStatus) {
-        self.modified = time::get_time().sec;
+        self.modified = OffsetDateTime::now_utc().unix_timestamp();
         self.status = status;
     }
 
     pub fn set_stage(&mut self, stage: &str) {
-        self.modified = time::get_time().sec;
+        self.modified = OffsetDateTime::now_utc().unix_timestamp();
         self.stage = Some(stage.into());
     }
 
